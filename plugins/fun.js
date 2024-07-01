@@ -1,46 +1,7 @@
 const axios = require('axios')
-const { smd, sleep } = require('../lib')
+const { smd, sleep, getRandomFunFact } = require('../lib')
 const fetch = require('node-fetch')
-/**
- * Fetches random fun facts or content based on the provided type
- * @param {string} type - The type of content to fetch ('question', 'truth', 'dare', 'joke', 'joke2', 'fact', 'quotes')
- * @returns {Promise<string>} A promise that resolves to the fetched content
- */
-async function randomeFunfacts(type) {
- try {
-  switch (type) {
-   case 'question':
-    return await random_question()
-   case 'truth':
-    return await truth()
-   case 'dare':
-    return await dare()
-   case 'joke':
-    const jokeResponse = await fetch('https://official-joke-api.appspot.com/random_joke')
-    const joke = await jokeResponse.json()
-    return `*Joke:* ${joke.setup}\n*Punchline:* ${joke.punchline}`
-   case 'joke2':
-    const joke2Response = await fetch('https://v2.jokeapi.dev/joke/Any?type=single')
-    const joke2 = await joke2Response.json()
-    return `*Joke:* ${joke2.joke}`
-   case 'fact':
-    const { data: factData } = await axios.get('https://nekos.life/api/v2/fact')
-    return `*Fact:* ${factData.fact}`
-   case 'quotes':
-    const { data: quoteData } = await axios.get('https://favqs.com/api/qotd')
-    return `╔════◇
-║ *🎗️Content:* ${quoteData.quote.body}
-║ *👤Author:* ${quoteData.quote.author}
-║
-╚════════════╝`
-   default:
-    throw new Error('Invalid content type')
-  }
- } catch (error) {
-  console.error('./lib/utils.js/randomFunFacts():', error)
-  throw error
- }
-}
+
 smd({ cmdname: 'hack', type: 'fun', info: 'hacking prank', filename: __filename }, async citel => {
  const messages = [
   'Injecting Malware',
@@ -106,7 +67,7 @@ smd(
  },
  async (_0x526dda, _0x570e21, { smd: _0x59940a }) => {
   try {
-   await _0x526dda.reply(await randomeFunfacts(_0x59940a))
+   await _0x526dda.reply(await getRandomFunFact(_0x59940a))
   } catch (_0x2763aa) {
    await _0x526dda.error(_0x2763aa + '\n\ncommand: ' + _0x59940a, _0x2763aa)
   }
@@ -121,7 +82,7 @@ smd(
  },
  async (_0xc2b276, _0x3b493e, { smd: _0x52be61 }) => {
   try {
-   await _0xc2b276.reply(await randomeFunfacts(_0x52be61))
+   await _0xc2b276.reply(await getRandomFunFact(_0x52be61))
   } catch (_0x28b284) {
    await _0xc2b276.error(_0x28b284 + '\n\ncommand: ' + _0x52be61, _0x28b284)
   }
@@ -136,7 +97,7 @@ smd(
  },
  async (_0x330b72, _0x34d36a, { smd: _0x2a0858 }) => {
   try {
-   await _0x330b72.reply(await randomeFunfacts(_0x2a0858))
+   await _0x330b72.reply(await getRandomFunFact(_0x2a0858))
   } catch (_0x27a0b8) {
    await _0x330b72.error(_0x27a0b8 + '\n\ncommand: ' + _0x2a0858, _0x27a0b8)
   }
@@ -151,7 +112,7 @@ smd(
  },
  async (_0x330ac0, _0x8b468d, { smd: _0x2e3522 }) => {
   try {
-   await _0x330ac0.reply(await randomeFunfacts(_0x2e3522))
+   await _0x330ac0.reply(await getRandomFunFact(_0x2e3522))
   } catch (_0x1817a2) {
    await _0x330ac0.error(_0x1817a2 + '\n\ncommand: ' + _0x2e3522, _0x1817a2)
   }
@@ -166,7 +127,7 @@ smd(
  },
  async (_0x5c9c52, _0x6b6e25, { smd: _0x64ba }) => {
   try {
-   await _0x5c9c52.reply(await randomeFunfacts(_0x64ba))
+   await _0x5c9c52.reply(await getRandomFunFact(_0x64ba))
   } catch (_0x35fd84) {
    await _0x5c9c52.error(_0x35fd84 + '\n\ncommand: ' + _0x64ba, _0x35fd84)
   }
@@ -181,7 +142,7 @@ smd(
  },
  async (_0x1dc7e3, _0x16aaa1, { smd: _0x375b98 }) => {
   try {
-   await _0x1dc7e3.reply(await randomeFunfacts(_0x375b98))
+   await _0x1dc7e3.reply(await getRandomFunFact(_0x375b98))
   } catch (_0x1e1a8b) {
    await _0x1dc7e3.error(_0x1e1a8b + '\n\ncommand: ' + _0x375b98, _0x1e1a8b)
   }
@@ -196,7 +157,7 @@ smd(
  },
  async (_0x12963f, _0x4f30d2, { smd: _0x3462d1 }) => {
   try {
-   await _0x12963f.reply(await randomeFunfacts(_0x3462d1))
+   await _0x12963f.reply(await getRandomFunFact(_0x3462d1))
   } catch (_0x18e714) {
    await _0x12963f.error(_0x18e714 + '\n\ncommand: ' + _0x3462d1, _0x18e714)
   }
