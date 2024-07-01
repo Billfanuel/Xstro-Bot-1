@@ -15,6 +15,8 @@ let {
   tiny,
   smd,
   bot,
+  ping,
+  Index,
 } = require("../lib");
 const util = require("util");
 const { cmd } = require("../lib/plugins");
@@ -527,25 +529,14 @@ astro_patch.cmd(
     }
   }
 );
-astro_patch.smd(
+Index(
   {
     pattern: "ping",
     desc: "To check ping",
     category: "user",
     filename: __filename,
   },
-  async (context) => {
-    const startTime = new Date().getTime();
-    const { key: messageKey } = await context.reply("*hmm...*");
-    const endTime = new Date().getTime();
-    const pingTime = endTime - startTime;
-    await context.send(
-      `*ʟᴀᴛᴇɴᴄʏ: ${pingTime} ᴍs*`,
-      { edit: messageKey },
-      "",
-      context
-    );
-  }
+ ping
 );
 smd(
   {

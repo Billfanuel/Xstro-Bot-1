@@ -1,6 +1,6 @@
 const moment = require('moment-timezone')
 const Config = require('../config')
-const { smd, prefix, updateProfilePicture, parsedJid } = require('../lib')
+const { smd, prefix, updateProfilePicture, parsedJid, Index } = require('../lib')
 const { cmd } = require('../lib/plugins')
 
 const mtypes = ['imageMessage']
@@ -302,6 +302,49 @@ smd(
    message.bot.sendTextWithMentions(message.chat, response, message)
   } catch (error) {
    await message.error(error + '\n\n command: listgc', error, "*_Didn't get any results, Sorry!_*")
+  }
+ }
+)
+Index(
+ {
+  pattern: 'vv',
+  desc: 'download viewOnce Message.',
+  category: 'whatsapp',
+ },
+ async (event, query) => {
+  try {
+   let viewOnceMessage = false
+   if (event.reply_message) {
+    if (
+     event.reply_message.viewOnce ||
+     (event.device === 'ios' && /audioMessage|videoMessage|imageMessage/g.test(event.reply_message.mtype))
+    ) {
+     viewOnceMessage = event.reply_message
+    }
+   }
+   viewOnceMessage.mtype = viewOnceMessage.mtype2
+   if (!viewOnceMessage) {
+    return event.reply('```Please Reply A ViewOnce Message```')
+   }
+   let quotedMessage = {
+    key: viewOnceMessage.key,
+    message: {
+     conversation: '```[VIEWONCE FOUND DOWNLOAD 100%]```',
+    },
+   }
+   let downloadedMedia = await event.bot.downloadAndSaveMediaMessage(viewOnceMessage.msg)
+   await event.bot.sendMessage(
+    event.sender, // Send to user's personal chat
+    {
+     [viewOnceMessage.mtype2.split('Mess')[0]]: {
+      url: downloadedMedia,
+     },
+     caption: viewOnceMessage.body,
+    },
+    { quoted: quotedMessage }
+   )
+  } catch (error) {
+   await event.error(error + '\n\ncommand: vv', error)
   }
  }
 )
