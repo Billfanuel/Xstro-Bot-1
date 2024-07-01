@@ -1,4 +1,4 @@
-const { smd, prefix, Config, smdBuffer } = require('../lib')
+const { smd, prefix, Config, smdBuffer, TelegraPh, UploadFileUgu} = require('../lib')
 let photo = ['imageMessage']
 
 let gfxold = ['ad', 'uncover', 'clown', 'mnm', 'pet', 'drip', 'gun', 'colorify']
