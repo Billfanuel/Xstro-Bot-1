@@ -4,9 +4,7 @@ Index(
  {
   pattern: 'time',
   desc: 'Show Time',
-  category: 'tools',
-  filename: __filename,
-  use: '<group link.>',
+  category: 'tools'
  },
  async message => {
   try {

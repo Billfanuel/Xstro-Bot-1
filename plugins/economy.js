@@ -1,5 +1,4 @@
 const { groupdb, smd, getBuffer, tlang, prefix } = require('../lib')
-const Config = require('../config')
 const eco = require('discord-mongoose-economy')
 let ty = false
 
