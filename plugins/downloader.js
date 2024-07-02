@@ -1,4 +1,4 @@
-const { smd, fetchJson, fancytext, yt, getBuffer, getBuffer, prefix, Config } = require('../lib')
+const { smd, fetchJson, fancytext, yt, getBuffer, prefix, Config } = require('../lib')
 const { search, download } = require('aptoide-scraper')
 const googleTTS = require('google-tts-api')
 const ytdl = require('ytdl-secktor')
