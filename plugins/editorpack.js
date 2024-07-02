@@ -1,4 +1,4 @@
-const { smd, prefix, Config, smdBuffer, TelegraPh, UploadFileUgu} = require('../lib')
+const { smd, prefix, Config, getBuffer, TelegraPh, UploadFileUgu} = require('../lib')
 let photo = ['imageMessage']
 
 let gfxold = ['ad', 'uncover', 'clown', 'mnm', 'pet', 'drip', 'gun', 'colorify']
@@ -90,7 +90,7 @@ const sendEditor = async (m, cmd, error = true, cap = Config.caption?.split('\n'
    fs.unlink(media)
   } catch (e) {}
   if (!anu) return m.reply('*_Failed To Create Url!_*')
-  let base = await smdBuffer(`${api_smd}/api/maker/${cmd}?url=${anu}`)
+  let base = await getBuffer(`${api_smd}/api/maker/${cmd}?url=${anu}`)
 
   m.send(base, { caption: cap }, 'img', mm)
  } catch (e) {

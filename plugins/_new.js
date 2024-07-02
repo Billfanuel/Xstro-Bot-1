@@ -3,7 +3,7 @@ let {
    formatp,
    prefix,
    smd,
-   smdBuffer,
+   getBuffer,
  } = require("../lib");
  const axios = require("axios");
  const fetch = require("node-fetch");
@@ -157,7 +157,7 @@ smd(
            title: "ACTIVE",
            sourceUrl: gurl,
            showAdAttribution: true,
-           thumbnail: await smdBuffer(await _0x17bb63.getpp())
+           thumbnail: await getBuffer(await _0x17bb63.getpp())
          }
        }
      }, "asta");
@@ -512,7 +512,7 @@ smd(
      }
      var _0x54710d = false;
      try {
-       _0x54710d = await smdBuffer(tmpUrl);
+       _0x54710d = await getBuffer(tmpUrl);
      } catch (_0x40985f) {}
      await _0x10eae6.reply(("*YOUR TEMPMAIL INFO*\n      \n      \n  *EMAIL:* ➪ " + secmailData[_0x10eae6.sender].email + "\n  *Login:* ➪ " + secmailData[_0x10eae6.sender].login + "\n  *Domain:* ➪ " + secmailData[_0x10eae6.sender].domain + "\n  \n  \n  *USE _" + prefix + "checkmail_ to get latest emails!*\n  *USE _" + prefix + "delmail_ to delete current email!*\n  \n  " + Config.caption + "\n  ").trim(), {
        contextInfo: {
@@ -542,7 +542,7 @@ smd(
      }
      var _0x392c45 = false;
      try {
-       _0x392c45 = await smdBuffer(tmpUrl);
+       _0x392c45 = await getBuffer(tmpUrl);
      } catch (_0x27f4a4) {}
      for (const _0x2b6dd0 of _0xb59e7d) {
        const _0x587f7f = await tempmail.emailContent(_0x1ca6eb.login, _0x1ca6eb.domain, _0x2b6dd0.id);

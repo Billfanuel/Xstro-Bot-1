@@ -1,4 +1,4 @@
-const { smd, fetchJson, astroJson, fancytext, yt, getBuffer, smdBuffer, prefix, Config } = require('../lib')
+const { smd, fetchJson, astroJson, fancytext, yt, getBuffer, getBuffer, prefix, Config } = require('../lib')
 const { search, download } = require('aptoide-scraper')
 const googleTTS = require('google-tts-api')
 const ytdl = require('ytdl-secktor')
@@ -1609,7 +1609,7 @@ smd(
     '\n*Author :* ' +
     _0x4123ae.author.name +
     '\n\n\n_Reply 1 To Video_ Or _1 document_\n_Reply 2 To Audio_ Or _2 document_'
-   let _0x3885cc = await smdBuffer(_0x4123ae.thumbnail)
+   let _0x3885cc = await getBuffer(_0x4123ae.thumbnail)
    var _0x44a363 = {
     ...(await _0x2c2023.bot.contextInfo(Config.botname, 'ʏᴏᴜᴛᴜʙᴇ ꜱᴏɴɢ', _0x3885cc)),
    }

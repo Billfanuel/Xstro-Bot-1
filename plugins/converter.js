@@ -7,7 +7,7 @@ const {
 const fetch = require("node-fetch");
 const {
   fancytext,
-  smdBuffer,
+  getBuffer,
   getBuffer,
   listall,
   prefix,
@@ -104,7 +104,7 @@ smd({
   use: "< text.>"
 }, async (_0x1544ea, _0x3444c7) => {
   try {
-    let _0x128f40 = await smdBuffer("https://raganork-api.onrender.com/api/attp?text=" + (_0x3444c7 ? _0x3444c7 : "Please provide text to generate sticker") + "&apikey=with_love_souravkl11");
+    let _0x128f40 = await getBuffer("https://raganork-api.onrender.com/api/attp?text=" + (_0x3444c7 ? _0x3444c7 : "Please provide text to generate sticker") + "&apikey=with_love_souravkl11");
     return await generateSticker(_0x1544ea, _0x128f40);
   } catch (_0x560462) {
     return await _0x1544ea.error(_0x560462 + "\n\ncmdName: attp\n");
@@ -275,7 +275,7 @@ smd({
     if (!_0x41bce8 || _0x41bce8?.locale == "") {
       return _0x46e4d3.send("*_Can't create mixture, try other emojies_*");
     } else {
-      let _0x39bbd1 = await smdBuffer(_0x41bce8.results[0].url);
+      let _0x39bbd1 = await getBuffer(_0x41bce8.results[0].url);
       let _0x4c55c4 = {
         pack: Config.packname,
         author: Config.author,

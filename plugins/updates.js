@@ -1,6 +1,6 @@
 let {
    smd,
-   smdBuffer,
+   getBuffer,
    tlang,
    sleep
  } = require(global.lib_dir || "../lib");

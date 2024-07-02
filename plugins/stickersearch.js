@@ -5,7 +5,7 @@ const {
     Config,
     sleep,
     astroJson,
-    smdBuffer
+    getBuffer
   } = require("../lib");
   const axios = require("axios");
   smd({
@@ -28,7 +28,7 @@ const {
       }
       let _0x43fcbc = _0x1f4c84.data.results.length > 5 ? 5 : _0x1f4c84.data.results.length;
       for (let _0x48da09 = 0; _0x48da09 < _0x43fcbc; _0x48da09++) {
-        let _0x2a4632 = await smdBuffer(_0x1f4c84.data.results?.[_0x48da09]?.media[0]?.mp4?.url);
+        let _0x2a4632 = await getBuffer(_0x1f4c84.data.results?.[_0x48da09]?.media[0]?.mp4?.url);
         let _0x1c1454 = {
           pack: Config.packname,
           author: Config.author,
