@@ -4,7 +4,7 @@ const {
     prefix,
     Config,
     sleep,
-    astroJson,
+    fetchJson,
     getBuffer
   } = require("../lib");
   const axios = require("axios");

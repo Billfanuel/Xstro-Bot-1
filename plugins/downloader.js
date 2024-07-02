@@ -1,4 +1,4 @@
-const { smd, fetchJson, astroJson, fancytext, yt, getBuffer, getBuffer, prefix, Config } = require('../lib')
+const { smd, fetchJson, fancytext, yt, getBuffer, getBuffer, prefix, Config } = require('../lib')
 const { search, download } = require('aptoide-scraper')
 const googleTTS = require('google-tts-api')
 const ytdl = require('ytdl-secktor')
@@ -473,7 +473,7 @@ smd(
     )
    }
 
-   let video = await astroJson('https://api.maher-zubair.tech/download/twitter?url=' + query)
+   let video = await fetchJson('https://api.maher-zubair.tech/download/twitter?url=' + query)
 
    if (!video || !video.status === 200) {
     return await message.reply('*Invalid Video URL!*')
@@ -611,7 +611,7 @@ smd(
    if (!query || !query.startsWith('https://')) {
     return await message.send('*_Please provide a valid Facebook Video URL._')
    }
-   let video = await astroJson('https://api-smd.onrender.com/api/fbdown?url=' + query)
+   let video = await fetchJson('https://api-smd.onrender.com/api/fbdown?url=' + query)
    if (!video || !video.status) {
     return await message.reply('*Invalid Video URL!*')
    }
@@ -842,7 +842,7 @@ smd(
       'fb https://www.facebook.com/watch/?v=2018727118289093_*'
     )
    }
-   let video = await astroJson('https://api-smd.onrender.com/api/fbdown?url=' + query)
+   let video = await fetchJson('https://api-smd.onrender.com/api/fbdown?url=' + query)
    if (!video || !video.status) {
     return await message.reply('*Invalid Video URL!*')
    }
@@ -882,7 +882,7 @@ smd(
       'fb https://www.facebook.com/watch/?v=2018727118289093_*'
     )
    }
-   let video = await astroJson('https://api-smd.onrender.com/api/fbdown?url=' + query)
+   let video = await fetchJson('https://api-smd.onrender.com/api/fbdown?url=' + query)
    if (!video || !video.status) {
     return await message.reply('*Invalid Video URL!*')
    }
