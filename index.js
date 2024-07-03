@@ -11,7 +11,7 @@ const start = async () => {
 
   await new Promise(resolve => {
    setTimeout(() => {
-    bot.logger.debug('⏳ Performing preliminary checks...')
+    bot.logger.debug('🕛 Performing preliminary checks...')
     resolve()
    }, 2000)
   })
