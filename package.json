@@ -16,6 +16,7 @@
   "@hapi/boom": "^9.1.4",
   "@whiskeysockets/baileys": "6.7.5",
   "acrcloud": "^1.4.0",
+  "perf_hooks": "latest",
   "anime-character-random": "latest",
   "aptoide-scraper": "^1.0.1",
   "async-g-i-s": "^1.4.0",
