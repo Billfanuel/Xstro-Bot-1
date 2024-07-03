@@ -5,7 +5,7 @@ Index(
  {
   pattern: 'readmore',
   desc: 'Creates a readmore Text Message.',
-  type: 'misc',
+  category: 'misc',
  },
  async (message, text) => {
   try {

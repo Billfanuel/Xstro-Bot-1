@@ -6,7 +6,7 @@ Index(
  {
   pattern: 'chat',
   desc: 'chat with an AI',
-  type: 'ai',
+  category: 'ai',
  },
  async (message, query) => {
   try {
@@ -21,7 +21,7 @@ Index(
  {
   pattern: 'gpt',
   desc: 'chat with an AI',
-  type: 'ai',
+  category: 'ai',
  },
  async (message, query) => {
   try {
@@ -61,7 +61,7 @@ Index(
  {
   pattern: 'gpt2',
   desc: 'chat with an AI',
-  type: 'ai',
+  category: 'ai',
  },
  async (message, query) => {
   try {
@@ -87,7 +87,7 @@ Index(
  {
   pattern: 'dalle',
   desc: 'chat with an AI',
-  type: 'ai',
+  category: 'ai',
  },
  async (message, query) => {
   try {
@@ -136,7 +136,7 @@ Index(
  {
   pattern: 'anonymsg',
   desc: 'Send message Anonymously',
-  type: 'ai',
+  category: 'ai',
  },
  async (message, text, { smd: cmd }) => {
   try {
@@ -331,7 +331,7 @@ Index(
  {
   cmdname: 'hd',
   desc: 'enhance image quality!',
-  type: 'ai',
+  category: 'ai',
  },
  async message => {
   let quotedMessage = message.image ? message : message.reply_message
@@ -353,7 +353,7 @@ Index(
  {
   cmdname: 'dehaze',
   desc: 'enhance image quality!',
-  type: 'ai',
+  category: 'ai',
  },
  async message => {
   let quotedMessage = message.image ? message : message.reply_message
@@ -375,7 +375,7 @@ Index(
  {
   cmdname: 'recolor',
   desc: 'enhance image quality!',
-  type: 'ai',
+  category: 'ai',
  },
  async message => {
   let quotedMessage = message.image ? message : message.reply_message
@@ -397,7 +397,7 @@ Index(
  {
   pattern: 'blackbox',
   desc: 'Get information and sources for a given text from Blackbox API.',
-  type: 'ai',
+  category: 'ai',
  },
  async (message, input) => {
   try {
@@ -430,7 +430,7 @@ Index(
  {
   pattern: 'imagine',
   desc: 'Generate an image using AI',
-  type: 'ai',
+  category: 'ai',
  },
  async (message, query) => {
   try {
@@ -482,7 +482,7 @@ Index(
  {
   pattern: 'imagine2',
   desc: 'Generate an image using AI',
-  type: 'ai',
+  category: 'ai',
  },
  async (message, query) => {
   try {
@@ -525,7 +525,7 @@ Index(
 Index(
  {
   pattern: 'rmbg',
-  type: 'ai',
+  category: 'ai',
 
   desc: 'Remove image Background.',
  },
@@ -566,7 +566,7 @@ Index(
 Index(
  {
   pattern: 'ads',
-  type: 'ai',
+  category: 'ai',
   desc: 'Advertise your message by sending it to a provided number range.',
   fromMe: true,
  },
@@ -632,7 +632,7 @@ Index(
  {
   pattern: 'aitts',
   desc: 'Text to Voice Using Eleven Labs AI',
-  type: 'ai',
+  category: 'ai',
  },
  async (message, args) => {
   await aitts(message, args || message.reply_text)
