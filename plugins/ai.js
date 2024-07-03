@@ -1,797 +1,406 @@
-const { aitts, smd, prefix, Config, parsedJid, sleep } = require('../lib')
+const util = require('util')
+const fs = require('fs-extra')
+const { cmd } = require('../lib/plugins')
+const {
+ formatp,
+ TelegraPh,
+ aitts,
+ Index,
+ prefix,
+ runtime,
+ Config,
+ parsedJid,
+ sleep,
+ createUrl,
+ aiResponse,
+} = require('../lib')
 const axios = require('axios')
 const fetch = require('node-fetch')
-function isValidUrl(url) {
- try {
-  new URL(url)
-  return true
- } catch (_) {
-  return false
- }
-}
-async function aiResponse(sender, responseType, message = '') {
- let response = ''
- try {
-  if (responseType === 'chat') {
-   const url = `http://api.brainshop.ai/get?bid=175685&key=Pg8Wu8mrDQjfr0uv&uid=[${
-    sender.split('@')[0]
-   }]&msg=[${message}]`
-   response = (await axios.get(url)).data.cnt
-  } else if (responseType === 'gpt') {
-   const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-     'Content-Type': 'application/json',
-     Authorization: `Bearer ${Config.OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-     model: 'gpt-3.5-turbo',
-     messages: [
-      { role: 'system', content: 'You' },
-      { role: 'user', content: message },
-     ],
-    }),
-   })
-   const openaiData = await openaiResponse.json()
-   if (!openaiData.choices || openaiData.choices.length === 0) {
-    response = '*Invalid ChatGPT API Key, Please Put New Key*'
-   } else {
-    response = openaiData.choices[0].message.content
-   }
-  } else if (responseType === 'dalle') {
-   const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
-    method: 'POST',
-    headers: {
-     'Content-Type': 'application/json',
-     Authorization: `Bearer ${Config.OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-     model: 'image-alpha-001',
-     prompt: message,
-     size: '512x512',
-     response_format: 'url',
-    }),
-   })
-   const dalleData = await dalleResponse.json()
-   response = dalleData.data[0].url
-  } else if (responseType === 'rmbg') {
-   const removeBgData = {
-    image_url: message,
-    size: 'auto',
-   }
-   try {
-    const removeBgResponse = await axios.post('https://api.remove.bg/v1.0/removebg', removeBgData, {
-     headers: {
-      'X-Api-Key': Config.REMOVE_BG_KEY,
-     },
-     responseType: 'arraybuffer',
-    })
-    response = Buffer.from(removeBgResponse.data, 'binary')
-   } catch (error) {
-    response = false
-   }
+const os = require('os')
+const speed = require('performance-now')
+Index(
+ {
+  pattern: 'chat',
+  desc: 'chat with an AI',
+  category: 'ai',
+ },
+ async (message, query) => {
+  try {
+   return message.reply(await aiResponse(message, 'chat', query))
+  } catch (error) {
+   await message.error(`${error}\n\ncommand: chat`, error, '*_No response from chatbot, sorry!!_*')
   }
-  return response
- } catch (error) {
-  console.log('Error while getting AI response: ', error)
-  return 'Error While getting AI response'
  }
-}
+)
 
-smd(
+Index(
  {
   pattern: 'gpt',
-  alias: ['chatgpt', 'ai'],
-  desc: 'Chat with GPT-3.5',
+  desc: 'chat with an AI',
   category: 'ai',
-  use: '<query>',
-  filename: __filename,
  },
- async (m, query) => {
+ async (message, query) => {
   try {
+   query = query || bot.reply_text
    if (!query) {
-    return await m.reply('*Please provide a query for GPT-3.5.*')
+    return message.reply("Provide me a query, e.g., 'Who is Suhail?'")
    }
 
-   const response = await aiResponse(m.sender, 'gpt', query)
-
-   if (response) {
-    return await m.reply(response)
-   } else {
-    return await m.reply('*Error: Unable to get a response from GPT-3.5.*')
+   try {
+    const response = await fetch(`https://aemt.me/openai?text=${query}`)
+    const data = await response.json()
+    if (data && data.status && data.result) {
+     return await message.reply(data.result)
+    }
+   } catch (error) {
+    console.error('Error fetching from aemt.me:', error)
    }
-  } catch (err) {
-   await m.error(err + '\n\ncommand: gpt', err, '*_No response from GPT-3.5, Sorry!_*')
+
+   if (!Config.OPENAI_API_KEY || !Config.OPENAI_API_KEY.startsWith('sk')) {
+    return message.reply(
+     "```You don't have an OPENAI API KEY. Please create one from:\nhttps://platform.openai.com/account/api-keys\nAnd set it in Heroku OPENAI_API_KEY Var```"
+    )
+   }
+
+   if (!query) {
+    return message.reply(`Hey there! ${message.senderName}. How are you doing these days?`)
+   }
+
+   return message.send(await aiResponse(message, 'gpt', query))
+  } catch (error) {
+   await message.error(`${error}\n\ncommand: gpt`, error, '*_No response from ChatGPT, sorry!!_*')
   }
  }
 )
 
-smd(
+Index(
  {
-  pattern: 'chat',
-  desc: 'Chat with an AI (using Brainshop)',
+  pattern: 'fgpt',
+  desc: 'chat with an AI',
   category: 'ai',
-  use: '<message>',
-  filename: __filename,
  },
- async (m, message) => {
+ async (message, query) => {
   try {
-   if (!message) {
-    return await m.reply('*Please provide a message to chat with the AI.*')
+   query = query || message.reply_text
+   if (!query) {
+    return message.reply("Provide me a query, e.g., 'Who is Suhail?'")
    }
 
-   const response = await aiResponse(m.sender, 'chat', message)
-
-   if (response) {
-    return await m.reply(response)
+   const response = await fetch(`https://aemt.me/openai?text=${query}`)
+   const data = await response.json()
+   if (data && data.status && data.result) {
+    return await message.send(data.result)
    } else {
-    return await m.reply('*Error: Unable to get a response from the AI.*')
+    await message.send('*_Error while getting GPT response!!_*')
    }
-  } catch (err) {
-   await m.error(err + '\n\ncommand: chat', err, '*_No response from AI, Sorry!_*')
+  } catch (error) {
+   await message.error(`${error}\n\ncommand: fgpt`, error, '*_No response from ChatGPT, sorry!!_*')
   }
  }
 )
 
-smd(
+Index(
  {
   pattern: 'dalle',
-  alias: ['dall', 'dall-e'],
-  desc: 'Generate an image using DALL-E',
+  desc: 'chat with an AI',
   category: 'ai',
-  use: '<description>',
   filename: __filename,
  },
- async (m, query) => {
+ async (message, query) => {
   try {
    if (!query) {
-    return await m.reply('*Give Me A Query To Get Dall-E Response?*')
+    return await message.reply('*Give Me A Query To Get Dall-E Response?*')
    }
 
-   const response = await aiResponse(m.sender, 'dalle', query)
-
-   if (response) {
-    return await m.bot.sendMessage(m.chat, {
-     image: { url: response },
-     caption: `[PROMPT]: \`\`\`${query}\`\`\` \n ${Config.caption}`,
-    })
-   } else {
-    return await m.reply('*Error generating image*')
-   }
-  } catch (err) {
-   await m.error(err + '\n\ncommand: dalle', err, '*_No response from Dall-E AI, Sorry!_*')
-  }
- }
-)
-
-smd(
- {
-  pattern: 'rmbg',
-  alias: ['removebg'],
-  desc: 'Removes the background from an image.',
-  category: 'ai',
-  filename: __filename,
-  use: '<image URL>',
- },
- async (message, input) => {
-  try {
-   const url = input.trim()
-   if (!url || !isValidUrl(url)) {
-    return await message.send('*_Please provide a valid image URL._*')
-   }
-
-   const response = await aiResponse(message.sender, 'rmbg', url)
-
-   if (response) {
-    await message.bot.sendMessage(message.chat, { image: response }, { quoted: message })
-   } else {
-    return await message.reply('*Failed to remove background from the image.*')
-   }
-  } catch (error) {
-   await message.error(error + '\n\nCommand: rmbg', error, '*Failed to remove background from the image.*')
-  }
- }
-)
-smd(
- {
-  pattern: 'sd',
-  desc: 'Generates an image using Stable Diffusion AI.',
-  category: 'ai',
-  filename: __filename,
-  use: '<text>',
- },
- async (message, input) => {
-  try {
-   const text = input.trim()
-   if (!text) {
-    return await message.send('*_Please provide some text to generate an image._*')
-   }
-
-   const apiUrl = `https://aemt.me/stablediffusion?text=${encodeURIComponent(text)}`
-   const response = await axios.get(apiUrl, {
-    headers: {
-     accept: 'application/json',
-    },
-    responseType: 'arraybuffer',
-   })
-
-   if (!response.data) {
-    return await message.reply('*Failed to generate an image using Stable Diffusion AI.*')
-   }
-
-   const buffer = Buffer.from(response.data, 'binary')
-   await message.bot.sendMessage(message.chat, { image: buffer }, { quoted: message })
-  } catch (error) {
-   await message.error(error + '\n\nCommand: stablediffusion', error, '*Failed to use Stable Diffusion AI.*')
-  }
- }
-)
-smd(
- {
-  pattern: 'bard',
-  desc: 'Generates a response from Bard AI.',
-  category: 'ai',
-  filename: __filename,
-  use: '<text>',
- },
- async (message, input) => {
-  try {
-   const text = input.trim()
-   if (!text) {
-    return await message.send('*_Please provide some text to generate a response._*')
-   }
-
-   const apiUrl = `https://aemt.me/bard?text=${encodeURIComponent(text)}`
-   const response = await axios.get(apiUrl, {
-    headers: {
-     accept: 'application/json',
-    },
-   })
-   const data = response.data
-
-   if (!data || !data.status) {
-    return await message.reply('*Failed to generate a response from Bard AI.*')
-   }
-
-   const result = data.result
-   return await message.send(`*ᴀsᴛᴀ ʙᴀʀᴅ ᴀɪ:*\n ${result}`, { quoted: message })
-  } catch (error) {
-   await message.error(error + '\n\nCommand: bard', error, '*Failed to use Bard AI.*')
-  }
- }
-)
-smd(
- {
-  pattern: 'gpt4',
-  category: 'ai',
-  desc: 'Chat with GPT-4 AI model',
-  use: '<text>',
-  filename: __filename,
- },
- async (message, text, { cmdName }) => {
-  if (!text)
-   return message.reply(`*_Please provide a query_*\n*_Example ${prefix + cmdName} What is the meaning of life?_*`)
-
-  try {
-   const apiUrl = `https://ultimetron.guruapi.tech/gpt4?prompt=${encodeURIComponent(text)}`
-   const response = await fetch(apiUrl)
-   const data = await response.json()
-
-   if (!data.result.success) return message.send("*There's a problem, try again later!*")
-
-   const { reply } = data.result
-   const astro = 'ᴀsᴛᴀ ɢᴘᴛ𝟺\n'
-   const tbl = '```'
-   await message.send(`${astro}${tbl}${reply}${tbl}`)
-  } catch (error) {
-   return await message.error(
-    `${error}\n\n command: ${cmdName}`,
-    error,
-    `*_An error occurred while processing your request_*`
-   )
-  }
- }
-)
-
-smd(
- {
-  pattern: 'gemini',
-  category: 'ai',
-  desc: 'Chat with Bard AI model',
-  use: '<text>',
-  filename: __filename,
- },
- async (message, text, { cmdName }) => {
-  if (!text)
-   return message.reply(`*_Please provide a query_*\n*_Example ${prefix + cmdName} What is the meaning of life?_*`)
-
-  try {
-   const res = await (await fetch(`https://api.maher-zubair.tech/ai/gemini?q=${text}`)).json()
-
-   if (!res.status === 200) return message.send("*There's a problem, try again later!*")
-
-   const { result } = res
-   const astro = 'ᴀsᴛᴀ ɢᴇᴍɪɴɪ ᴀɪ'
-   const tbl = '```'
-   await message.send(`${astro}${tbl}${result}${tbl}`)
-  } catch (e) {
-   return await message.error(`${e}\n\n command: ${cmdName}`, e, `*_An error occurred while processing your request_*`)
-  }
- }
-)
-smd(
- {
-  cmdname: 'alexa2',
-  category: 'ai',
-  use: '[text]',
-  filename: __filename,
-  info: 'chat with simsimi alexa ai!',
- },
- async (_0xe6d6e, _0x23f786) => {
-  try {
-   if (!_0x23f786) {
-    return await _0xe6d6e.reply('Hi *' + _0xe6d6e.senderName + '*, do you want to talk?')
-   }
-   const _0x55bb61 = {
-    method: 'POST',
-    headers: {
-     'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: 'text=' + encodeURIComponent(_0x23f786) + '&lc=en&key=',
-   }
-   const _0x5099c8 = await fetch('https://api.simsimi.vn/v2/simtalk', _0x55bb61)
-   const _0x2c3e12 = await _0x5099c8.json()
-   if (_0x2c3e12.status === '200' && _0x2c3e12.message) {
-    _0xe6d6e.reply(_0x2c3e12.message)
-   } else {
-    _0xe6d6e.reply('*No Responce!*')
-   }
-  } catch (_0xfee6e3) {
-   await _0xe6d6e.error(_0xfee6e3 + '\n\ncommand : poetry', _0xfee6e3, false)
-  }
- }
-)
-smd(
- {
-  pattern: 'chat',
-  desc: 'chat with an AI',
-  category: 'ai',
-  use: '<Hii, Astro>',
-  filename: __filename,
- },
- async (_0x1c0160, _0x482db1) => {
-  let astro = 'ᴀsᴛᴀ ᴄʜᴀᴛ ʙᴏᴛ'
-  try {
-   return _0x1c0160.reply(await aiResponce(_0x1c0160, 'chat', _0x482db1))
-  } catch (_0x4adf95) {
-   await _0x1c0160.error(_0x4adf95 + '\n\ncommand: chat', _0x4adf95, '*_no responce from chatbot, sorry!!_*')
-  }
- }
-)
-
-smd(
- {
-  pattern: 'imagine',
-  alias: ['imagin'],
-  desc: 'chat with an AI',
-  category: 'ai',
-  use: '<boy walking on street>',
-  filename: __filename,
- },
- async (_0x9bac01, _0x3700d4) => {
-  try {
-   let _0x2968fd = _0x3700d4 || _0x9bac01.reply_text
-   if (!_0x2968fd) {
-    return await _0x9bac01.reply('*Give Me A Query To Get imagination?*')
-   }
-   let _0x24d5e9 = false
+   const imageUrl = `https://gurugpt.cyclic.app/dalle?prompt=${encodeURIComponent(query)}`
    try {
-    const _0x156dd7 = await fetch(
-     'https://aemt.me/openai?text=' +
-      (_0x2968fd + ' \nNOTE: Make sure to looks like imagination, make it short and concise, also in english!')
-    )
-    const _0x49b22e = await _0x156dd7.json()
-    _0x24d5e9 = _0x49b22e && _0x49b22e.status && _0x49b22e.result ? _0x49b22e.result : ''
-   } catch (_0xf1623a) {
-    _0x24d5e9 = false
-   }
-   try {
-    await Draw(_0x2968fd || _0x9bac01.reply_text).then(_0x1f03a3 => {
-     _0x9bac01.bot.sendMessage(_0x9bac01.chat, {
-      image: _0x1f03a3,
-      caption:
-       '*[IMAGININATION]:* ```' +
-       _0x2968fd +
-       ' ```' +
-       (_0x24d5e9 ? '\n\n*[RESPONCE]:* ```' + _0x24d5e9 + '``` \n' : '') +
-       '  \n ' +
-       Config.caption +
-       ' ',
-     })
+    return await message.bot.sendMessage(message.chat, {
+     image: { url: imageUrl },
+     caption: `[PROMPT]: \`\`\`${query}\`\`\`  \n ${Config.caption} `,
     })
-    return
-   } catch (_0x45726b) {
-    console.log('ERROR IN IMAGINE RESPONCE FROM IMAGINE API n', _0x45726b)
+   } catch (error) {
+    console.log('ERROR IN DALLE RESPONSE FROM API GURUGPT\n', error)
    }
-   if (Config.OPENAI_API_KEY == '' || !Config.OPENAI_API_KEY || !('' + Config.OPENAI_API_KEY).startsWith('sk')) {
-    return _0x9bac01.reply(
-     '```You Dont Have OPENAI API KEY \nPlease Create OPEN API KEY from Given Link \nhttps://platform.openai.com/account/api-keys\nAnd Set Key in Heroku OPENAI_API_KEY Var```'
+
+   if (!Config.OPENAI_API_KEY || !Config.OPENAI_API_KEY.startsWith('sk')) {
+    return message.reply(
+     "```You don't have an OPENAI API KEY. Please create one from:\nhttps://platform.openai.com/account/api-keys\nAnd set it in Heroku OPENAI_API_KEY Var```"
     )
    }
-   return await _0x9bac01.bot.sendMessage(_0x9bac01.chat, {
-    image: {
-     url: await aiResponce(_0x9bac01, 'dalle', _0x2968fd),
-    },
+
+   return await message.bot.sendMessage(message.chat, {
+    image: { url: await aiResponse(message, 'dalle', query) },
     caption: '*---Your DALL-E Result---*\n' + Config.caption,
    })
-  } catch (_0x5d8080) {
-   await _0x9bac01.error(_0x5d8080 + '\n\ncommand: imagine', _0x5d8080, '*_No responce from Server side, Sorry!!_*')
+  } catch (error) {
+   await message.error(`${error}\n\ncommand: dalle`, error, '*_No response from Dall-E AI, Sorry!!_*')
   }
- }
-)
-smd(
- {
-  pattern: 'imagine2',
-  alias: ['imagin2'],
-  desc: 'chat with an AI',
-  category: 'ai',
-  use: '<boy walking on street>',
-  filename: __filename,
- },
- async (_0x39716c, _0xe79cfd) => {
-  try {
-   let _0x5e79d4 = _0xe79cfd || _0x39716c.reply_text
-   if (!_0x5e79d4) {
-    return await _0x39716c.reply('*Give Me A Query To Get imagination?*')
-   }
-   const _0x14515f =
-    'https://gurugpt.cyclic.app/dalle?prompt=' +
-    encodeURIComponent(_0x5e79d4 + ' \nNOTE: Make sure to looks like imagination')
-   let _0x5d0b6a = false
-   try {
-    const _0x37057d = await fetch(
-     'https://aemt.me/openai?text=' +
-      (_0x5e79d4 + ' \nNOTE: Make sure to looks like imagination, make it short and concise, also in english!')
-    )
-    const _0x644785 = await _0x37057d.json()
-    _0x5d0b6a = _0x644785 && _0x644785.status && _0x644785.result ? _0x644785.result : ''
-   } catch (_0x3ecac9) {
-    _0x5d0b6a = false
-   }
-   try {
-    return await _0x39716c.bot.sendMessage(_0x39716c.chat, {
-     image: {
-      url: _0x14515f,
-     },
-     caption:
-      '*[IMAGININATION]:* ```' +
-      _0x5e79d4 +
-      ' ```' +
-      (_0x5d0b6a ? '\n\n*[RESPONCE]:* ```' + _0x5d0b6a + '``` \n' : '') +
-      '  \n ' +
-      Config.caption +
-      ' ',
-    })
-   } catch (_0x484392) {
-    console.log('ERROR IN IMAGINE RESPONCE FROM API GURUGPT\n', _0x484392)
-   }
-   if (Config.OPENAI_API_KEY == '' || !Config.OPENAI_API_KEY || !('' + Config.OPENAI_API_KEY).startsWith('sk')) {
-    return _0x39716c.reply(
-     '```You Dont Have OPENAI API KEY \nPlease Create OPEN API KEY from Given Link \nhttps://platform.openai.com/account/api-keys\nAnd Set Key in Heroku OPENAI_API_KEY Var```'
-    )
-   }
-   return await _0x39716c.bot.sendMessage(_0x39716c.chat, {
-    image: {
-     url: await aiResponce(_0x39716c, 'dalle', _0x5e79d4),
-    },
-    caption: '*---Your DALL-E Result---*\n' + Config.caption,
-   })
-  } catch (_0x110b5d) {
-   await _0x39716c.error(_0x110b5d + '\n\ncommand: imagine', _0x110b5d, '*_No responce from Server side, Sorry!!_*')
-  }
- }
-)
-async function Draw(_0x3ab488) {
- const _0x54c8a4 = await fetch('https://api-inference.huggingface.co/models/prompthero/openjourney-v2', {
-  method: 'POST',
-  headers: {
-   'content-type': 'application/json',
-   Authorization: 'Bearer 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',
-  },
-  body: JSON.stringify({
-   inputs: _0x3ab488,
-  }),
- }).then(_0x5838c2 => _0x5838c2.blob())
- const _0x1c59a6 = await _0x54c8a4.arrayBuffer()
- return Buffer.from(_0x1c59a6)
-}
-smd(
- {
-  pattern: 'aitts',
-  desc: 'Text to Voice Using Eleven Lab Ai',
-  category: 'ai',
-  use: '<Hii, Astro>',
-  filename: __filename,
- },
- async (_0x1a01af, _0x1ac85a) => {
-  await aitts(_0x1a01af, _0x1ac85a || _0x1a01af.reply_text)
  }
 )
 const astro_patch_AnonyMsg = {}
 let isAnnonyMsgAlive = ''
-let cmdName = 'rcg'
+
 class AnonymousMsg {
  constructor() {
   this.id = ''
   this.sender = ''
-  this.reciever = ''
+  this.receiver = ''
   this.senderMsg = ''
-  this.tellinfo = 0
-  this.howmanyreply = 0
+  this.tellInfo = 0
+  this.replyCount = 0
  }
 }
-smd(
+
+Index(
  {
   pattern: 'anonymsg',
-  alias: ['recognition', 'anonychat'],
-  desc: 'Send message Annonymously',
+  desc: 'Send message Anonymously',
   category: 'ai',
-  use: '<Hii, Astro>',
-  filename: __filename,
  },
- async (_0x358984, _0x20693a, { smd: _0x12d243 }) => {
+ async (message, text, { smd: cmd }) => {
   try {
-   let _0x32512b = _0x20693a ? _0x20693a : _0x358984.reply_text
-   if (!_0x32512b) {
-    return await _0x358984.send(
-     '*provide number with msg to send Anonymously.* \n*Example ' +
-      (prefix + _0x12d243) +
-      ' 2348039607375,your_Message*',
+   const input = text || message.reply_text
+   if (!input) {
+    return await message.send(
+     `*Provide number with msg to send Anonymously.* \n*Example ${prefix + cmd} 2348039607375,your_Message*`,
      {},
      '',
-     _0x358984
+     message
     )
    }
-   if (_0x358984.isCreator && _0x32512b === 'info') {
-    return await _0x358984.reply(
-     isAnnonyMsgAlive == ''
-      ? '*Theres no Anonymous Chat created yet*'
-      : '*Anonymous Chat Recivers*\n_' + isAnnonyMsgAlive + '_'
+
+   if (message.isCreator && input === 'info') {
+    return await message.reply(
+     isAnnonyMsgAlive ? `*Anonymous Chat Receivers*\n_${isAnnonyMsgAlive}_` : '*No Anonymous Chat created yet*'
     )
    }
-   const _0x201d91 = _0x32512b.indexOf(',')
-   if (_0x201d91 === -1) {
-    return await _0x358984.reply('*Invalid format. Please provide both number and Message separated by a comma.*')
+
+   const commaIndex = input.indexOf(',')
+   if (commaIndex === -1) {
+    return await message.reply('*Invalid format. Please provide both number and Message separated by a comma.*')
    }
-   let _0x12e2ef = _0x32512b.slice(0, _0x201d91).trim() + '@s.whatsapp.net'
-   let _0x5f656f = _0x32512b.slice(_0x201d91 + 1).trim()
-   let _0x48975a = (await parsedJid(_0x12e2ef)) || []
-   if (_0x48975a[0]) {
-    const { date: _0xbcd286, time: _0x47ad13 } = await getDateTime()
-    const _0x3e1b1c = 'anony-msg-' + Math.floor(100000 + Math.random() * 900000)
-    astro_patch_AnonyMsg[_0x3e1b1c] = new AnonymousMsg()
-    let _0x3079e2 = astro_patch_AnonyMsg[_0x3e1b1c]
-    _0x3079e2.id = _0x3e1b1c
-    _0x3079e2.sender = _0x358984.sender
-    _0x3079e2.reciever = _0x48975a[0]
-    _0x3079e2.msgStatus = true
-    _0x3079e2.senderMsg = _0x358984
-    _0x5f656f =
-     '*ᴀsᴛᴀ-ᴍᴅ • ᴀɴɴᴏɴʏᴍᴏᴜs ᴍsɢ*\n\n*Msg_Id:* ' +
-     _0x3079e2.id +
-     '\n*Date:* _' +
-     _0xbcd286 +
-     '_\n*Time:* _' +
-     _0x47ad13 +
-     '_\n\n*Message:* ' +
-     _0x5f656f +
-     '\n\n\n' +
-     Config.caption
-    isAnnonyMsgAlive = isAnnonyMsgAlive + ',' + _0x3079e2.reciever
-    await _0x358984.bot.sendMessage(_0x3079e2.reciever, {
-     text: _0x5f656f,
-    })
-    return await _0x358984.reply('*_Anonymous message sent succesfully_*')
+
+   const receiverJid = `${input.slice(0, commaIndex).trim()}@s.whatsapp.net`
+   const messageContent = input.slice(commaIndex + 1).trim()
+   const parsedReceivers = await parsedJid(receiverJid)
+
+   if (parsedReceivers[0]) {
+    const { date, time } = await getDateTime()
+    const anonymousId = `anony-msg-${Math.floor(100000 + Math.random() * 900000)}`
+    astro_patch_AnonyMsg[anonymousId] = new AnonymousMsg()
+    const anonymousMessage = astro_patch_AnonyMsg[anonymousId]
+
+    anonymousMessage.id = anonymousId
+    anonymousMessage.sender = message.sender
+    anonymousMessage.receiver = parsedReceivers[0]
+    anonymousMessage.msgStatus = true
+    anonymousMessage.senderMsg = message
+
+    const formattedMessage = `*ᴀsᴛᴀ-ᴍᴅ • ᴀɴɴᴏɴʏᴍᴏᴜs ᴍsɢ*\n\n*Msg_Id:* ${anonymousMessage.id}\n*Date:* _${date}_\n*Time:* _${time}_\n\n*Message:* ${messageContent}\n\n\n${Config.caption}`
+
+    isAnnonyMsgAlive += `,${anonymousMessage.receiver}`
+    await message.bot.sendMessage(anonymousMessage.receiver, { text: formattedMessage })
+    return await message.reply('*_Anonymous message sent successfully_*')
    } else {
-    return await _0x358984.reply('*_Provided number is not valid!!!_*')
+    return await message.reply('*_Provided number is not valid!!!_*')
    }
-  } catch (_0x51ed58) {
-   await _0x358984.error(
-    _0x51ed58 + '\n\ncommand: ' + _0x12d243,
-    _0x51ed58,
-    "*_Can't send annonymously message yet, Sorry!!_*"
-   )
+  } catch (error) {
+   await message.error(`${error}\n\ncommand: ${cmd}`, error, "*_Can't send anonymous message yet, Sorry!!_*")
   }
  }
 )
-smd(
+
+Index(
  {
   on: 'text',
  },
- async _0x2acf30 => {
+ async message => {
   try {
-   if (_0x2acf30.quoted && isAnnonyMsgAlive.includes(_0x2acf30.sender) && _0x2acf30.text.length > 2) {
-    const _0x2dfb59 = _0x2acf30.reply_text.split('\n')
-    if (_0x2dfb59.length < 3) {
+   if (message.quoted && isAnnonyMsgAlive.includes(message.sender) && message.text.length > 2) {
+    const quotedLines = message.reply_text.split('\n')
+    if (quotedLines.length < 3) {
      return
     }
+
     if (
-     _0x2acf30.reply_text.includes('ᴀsᴛᴀ-ᴍᴅ • ᴀɴɴᴏɴʏᴍᴏᴜs ᴍsɢ') &&
-     _0x2dfb59[0].includes('ᴀsᴛᴀ-ᴍᴅ • ᴀɴɴᴏɴʏᴍᴏᴜs ᴍsɢ') &&
-     _0x2dfb59[2].includes('Msg_Id')
+     message.reply_text.includes('ᴀsᴛᴀ-ᴍᴅ • ᴀɴɴᴏɴʏᴍᴏᴜs ᴍsɢ') &&
+     quotedLines[0].includes('ᴀsᴛᴀ-ᴍᴅ • ᴀɴɴᴏɴʏᴍᴏᴜs ᴍsɢ') &&
+     quotedLines[2].includes('Msg_Id')
     ) {
-     let _0x1b0d01 = '' + _0x2dfb59[2].replace('*Msg_Id:* ', '').trim()
-     let _0x2ecd2a = astro_patch_AnonyMsg[_0x1b0d01]
-     if (!_0x2ecd2a) {
+     const msgId = quotedLines[2].replace('*Msg_Id:* ', '').trim()
+     const anonymousMessage = astro_patch_AnonyMsg[msgId]
+     if (!anonymousMessage) {
       return
      }
+
      try {
-      if (_0x2ecd2a) {
-       let _0x13a11c = _0x2acf30.text.split(',')[0].trim()
-       if (_0x13a11c.toLowerCase().startsWith('reply')) {
-        _0x2ecd2a.howmanyreply += 1
-        const _0x5a2204 = _0x2acf30.text.indexOf(',')
-        let _0x3f6b59 =
-         '*ᴀsᴛᴀ-ᴍᴅ • ʏᴏᴜʀ ᴀɴᴏɴʏ-ᴍsɢ ʀᴇᴘʟʏ*\n\n*_From @' +
-         _0x2ecd2a.reciever.split('@')[0] +
-         '_*\n*_Msg_Id: ' +
-         _0x2ecd2a.id +
-         '_*\n\n*Message:* ' +
-         _0x2acf30.text.slice(_0x5a2204 + 1).trim() +
-         '\n\n\n\n' +
-         Config.caption
-        if (_0x2ecd2a.howmanyreply >= 2) {
-         isAnnonyMsgAlive = isAnnonyMsgAlive.replace(',' + _0x2acf30.sender, '')
-        }
-        await _0x2acf30.bot.sendMessage(
-         _0x2ecd2a.sender,
-         {
-          text: _0x3f6b59,
-          mentions: [_0x2ecd2a.reciever],
-         },
-         {
-          quoted: _0x2ecd2a.senderMsg,
-         }
-        )
-        if (_0x2ecd2a.howmanyreply >= 2) {
-         isAnnonyMsgAlive = isAnnonyMsgAlive.replace(',' + _0x2acf30.sender, '')
-         delete astro_patch_AnonyMsg[_0x1b0d01]
-        }
-        return await _0x2acf30.reply(
-         '*_Your Message succesfully deliver to User_* ' +
-          (_0x2ecd2a.howmanyreply == 1 ? '\n*you can reply 1 more time*' : '') +
-          ' '
-        )
-       } else if (_0x2ecd2a.tellinfo === 0) {
-        _0x2ecd2a.tellinfo = 1
-        let _0x362db6 =
-         '*Basically, Its an Annonymous Message*\n\n_Msg_Id: ' +
-         _0x2ecd2a.id +
-         '_\n_this message sended by a chatbot_\n_User not wants to expose itself to send that msg_\n\n\n*if you wanna reply to that user,*\n*Send msg by replying to above message*\n*Type like:* reply, Type_your_Message_Here\n*Example:* reply, Can you text me from your number\n\n\n' +
-         Config.caption
-        _0x2acf30.bot.sendMessage(
-         _0x2ecd2a.reciever,
-         {
-          text: _0x362db6,
-         },
-         {
-          quoted: _0x2acf30,
-         }
-        )
-       } else if (_0x2ecd2a.tellinfo === 1) {
-        _0x2ecd2a.tellinfo = 2
-        _0x2acf30.reply('*Please follow the format if reply to msg*\n*Type like: _reply, Type_your_Message_Here_*')
+      const firstWord = message.text.split(',')[0].trim().toLowerCase()
+      if (firstWord === 'reply') {
+       anonymousMessage.replyCount += 1
+       const commaIndex = message.text.indexOf(',')
+       const replyContent = `*ᴀsᴛᴀ-ᴍᴅ • ʏᴏᴜʀ ᴀɴᴏɴʏ-ᴍsɢ ʀᴇᴘʟʏ*\n\n*_From @${
+        anonymousMessage.receiver.split('@')[0]
+       }_*\n*_Msg_Id: ${anonymousMessage.id}_*\n\n*Message:* ${message.text.slice(commaIndex + 1).trim()}\n\n\n\n${
+        Config.caption
+       }`
+
+       if (anonymousMessage.replyCount >= 2) {
+        isAnnonyMsgAlive = isAnnonyMsgAlive.replace(`,${message.sender}`, '')
        }
+
+       await message.bot.sendMessage(
+        anonymousMessage.sender,
+        {
+         text: replyContent,
+         mentions: [anonymousMessage.receiver],
+        },
+        {
+         quoted: anonymousMessage.senderMsg,
+        }
+       )
+
+       if (anonymousMessage.replyCount >= 2) {
+        isAnnonyMsgAlive = isAnnonyMsgAlive.replace(`,${message.sender}`, '')
+        delete astro_patch_AnonyMsg[msgId]
+       }
+
+       return await message.reply(
+        `*_Your Message successfully delivered to User_* ${
+         anonymousMessage.replyCount == 1 ? '\n*you can reply 1 more time*' : ''
+        } `
+       )
+      } else if (anonymousMessage.tellInfo === 0) {
+       anonymousMessage.tellInfo = 1
+       const infoMessage = `*Basically, It's an Anonymous Message*\n\n_Msg_Id: ${anonymousMessage.id}_\n_This message was sent by a chatbot_\n_User doesn't want to expose themselves to send that msg_\n\n\n*If you want to reply to that user,*\n*Send a message by replying to the above message*\n*Type like:* reply, Type_your_Message_Here\n*Example:* reply, Can you text me from your number\n\n\n${Config.caption}`
+       message.bot.sendMessage(
+        anonymousMessage.receiver,
+        {
+         text: infoMessage,
+        },
+        {
+         quoted: message,
+        }
+       )
+      } else if (anonymousMessage.tellInfo === 1) {
+       anonymousMessage.tellInfo = 2
+       message.reply('*Please follow the format to reply to the message*\n*Type like: _reply, Type_your_Message_Here_*')
       }
-     } catch (_0x58832f) {
-      console.log('error : ', _0x58832f)
+     } catch (error) {
+      console.log('error : ', error)
      }
     }
    }
-  } catch {}
+  } catch (error) {
+   // Handle any errors here
+  }
  }
 )
 
-smd(
+Index(
  {
   pattern: 'advt',
   alias: ['advertisement'],
   category: 'ai',
-  desc: 'Advertise of your Message, by sending it to provided nmbr range.',
+  desc: 'Advertise your Message by sending it to a provided number range.',
   use: '234803xx,Your_text_here',
   fromMe: true,
   filename: __filename,
  },
- async (_0x165087, _0x13462a) => {
+ async (message, text) => {
   try {
-   let _0x14810d = _0x13462a ? _0x13462a : _0x165087.reply_text
-   if (!_0x14810d) {
-    return await _0x165087.reply(
-     '*Advertise of your Message*\n*by sending it to provided nmbr range.*\n' + prefix + 'advt 234803xx,Your_text_here'
+   const input = text || message.reply_text
+   if (!input) {
+    return await message.reply(
+     '*Advertise your Message*\n*by sending it to provided number range.*\n' + `${prefix}advt 234803xx,Your_text_here`
     )
    }
-   const _0x94ba67 = _0x14810d.indexOf(',')
-   if (_0x94ba67 === -1) {
-    return await _0x165087.send('*Invalid format. Please provide number and Message separated by a comma.*')
+
+   const commaIndex = input.indexOf(',')
+   if (commaIndex === -1) {
+    return await message.send('*Invalid format. Please provide number and Message separated by a comma.*')
    }
-   let _0xd9b857 = '' + _0x14810d.slice(0, _0x94ba67).trim()
-   let _0x321dea = _0x14810d.slice(_0x94ba67 + 1).trim() + '\n\n\n' + Config.caption
-   if (!_0xd9b857.includes('x')) {
-    return _0x165087.send(
-     '*You did not add x in number.*\n*Ex: ' + prefix + 'advt 234803xx,Your_Message_here*  \n ' + Config.caption
+
+   const numberPattern = input.slice(0, commaIndex).trim()
+   const messageContent = `${input.slice(commaIndex + 1).trim()}\n\n\n${Config.caption}`
+
+   if (!numberPattern.includes('x')) {
+    return message.send(
+     `*You did not add x in number.*\n*Ex: ${prefix}advt 234803xx,Your_Message_here*  \n ${Config.caption}`
     )
    }
-   await _0x165087.send('*Sending message to given number range.!*\n*It may take some time, so wait please*')
-   function _0x4affa2(_0x9f9b09, _0x557f5a) {
-    return _0x9f9b09.split(_0x557f5a).length - 1
+
+   await message.send('*Sending message to given number range.*\n*It may take some time, so please wait*')
+
+   const countOccurrences = (str, char) => str.split(char).length - 1
+   const prefix = numberPattern.split('x')[0]
+   const suffix = numberPattern.split('x')[countOccurrences(numberPattern, 'x')] || ''
+   const xCount = countOccurrences(numberPattern, 'x')
+
+   let rangeLimit
+   if (xCount === 1) {
+    rangeLimit = 10
+   } else if (xCount === 2) {
+    rangeLimit = 100
+   } else if (xCount === 3) {
+    rangeLimit = 1000
+   } else if (xCount > 3) {
+    return await message.send('*Only 3(x) are Allowed in number*')
    }
-   var _0x43ad94 = _0xd9b857.split('x')[0]
-   var _0x1d8f31 = _0xd9b857.split('x')[_0x4affa2(_0xd9b857, 'x')]
-    ? _0xd9b857.split('x')[_0x4affa2(_0xd9b857, 'x')]
-    : ''
-   var _0x43415b = _0x4affa2(_0xd9b857, 'x')
-   var _0x4f926f
-   if (_0x43415b == 1) {
-    _0x4f926f = 10
-   } else if (_0x43415b == 2) {
-    _0x4f926f = 100
-   } else if (_0x43415b == 3) {
-    _0x4f926f = 1000
-   } else if (_0x43415b > 3) {
-    return await _0x165087.send('*Only 3(x) are Allowed in number*')
-   }
-   let _0x1e111b = 0
-   let _0x5c0975 = ''
-   var _0x5b9d27 = ''
-   for (let _0x3e0552 = 0; _0x3e0552 < _0x4f926f; _0x3e0552++) {
-    var _0x4d017c = await _0x165087.bot.onWhatsApp('' + _0x43ad94 + _0x3e0552 + _0x1d8f31 + '@s.whatsapp.net')
-    if (_0x4d017c[0]) {
-     _0x5b9d27 = _0x4d017c[0].jid
-     if (_0x5c0975.includes(_0x5b9d27)) {
+
+   let successCount = 0
+   let processedNumbers = ''
+   let lastProcessedNumber = ''
+
+   for (let i = 0; i < rangeLimit; i++) {
+    const currentNumber = `${prefix}${i}${suffix}@s.whatsapp.net`
+    const isValidNumber = await message.bot.onWhatsApp(currentNumber)
+
+    if (isValidNumber[0]) {
+     lastProcessedNumber = isValidNumber[0].jid
+     if (processedNumbers.includes(lastProcessedNumber)) {
       continue
      }
+
      await sleep(1500)
-     await _0x165087.bot.sendMessage(_0x5b9d27, {
-      text: _0x321dea,
+     await message.bot.sendMessage(lastProcessedNumber, {
+      text: messageContent,
      })
-     _0x5c0975 = _0x5c0975 + ',' + _0x5b9d27
-     _0x1e111b += 1
+
+     processedNumbers += `,${lastProcessedNumber}`
+     successCount += 1
     }
    }
-   return await _0x165087.send(
-    '*_Advertisement of your Message is Done,_* \n\n*_Message Succesfully sent to ' +
-     _0x1e111b +
-     ' chats_*\nLast_User: ' +
-     _0x5b9d27.split('@')[0] +
-     '\nSearch_No: ' +
-     _0x4f926f +
-     ' number searched\n\n\n' +
-     Config.caption
+
+   return await message.send(
+    `*_Advertisement of your Message is Done,_* \n\n*_Message Successfully sent to ${successCount} chats_*\n` +
+     `Last_User: ${lastProcessedNumber.split('@')[0]}\n` +
+     `Search_No: ${rangeLimit} numbers searched\n\n\n${Config.caption}`
    )
-  } catch (_0xfcb50a) {
-   await _0x165087.error(_0xfcb50a + '\n\ncommand: dalle', _0xfcb50a, '*_No responce from Server side, Sorry!!_*')
+  } catch (error) {
+   await message.error(`${error}\n\ncommand: dalle`, error, '*_No response from Server side, Sorry!!_*')
   }
  }
 )
-async function processing(_0x2f3dd0, _0x615984) {
+
+async function processing(imageBuffer, endpoint) {
  try {
-  const _0x19a878 = require('form-data')
-  return new Promise(async (_0x41cb49, _0x35934d) => {
-   Form = new _0x19a878()
-   scheme = 'https://inferenceengine.vyro.ai/' + _0x615984
-   Form.append('model_version', 1, {
+  const FormData = require('form-data')
+  return new Promise(async (resolve, reject) => {
+   const form = new FormData()
+   const scheme = `https://inferenceengine.vyro.ai/${endpoint}`
+   form.append('model_version', 1, {
     'Content-Transfer-Encoding': 'binary',
-    contentType: 'multipart/form-data; charset=uttf-8',
+    contentType: 'multipart/form-data; charset=utf-8',
    })
-   Form.append('image', Buffer.from(_0x2f3dd0), {
-    filename: _0x615984 + '.jpg',
+   form.append('image', Buffer.from(imageBuffer), {
+    filename: `${endpoint}.jpg`,
     contentType: 'image/jpeg',
    })
-   Form.submit(
+   form.submit(
     {
      url: scheme,
      host: 'inferenceengine.vyro.ai',
-     path: '/' + _0x615984,
+     path: `/${endpoint}`,
      protocol: 'https:',
      headers: {
       'User-Agent': 'okhttp/4.9.3',
@@ -799,96 +408,100 @@ async function processing(_0x2f3dd0, _0x615984) {
       'Accept-Encoding': 'gzip',
      },
     },
-    function (_0x9b5341, _0x51434f) {
-     if (_0x9b5341) {
-      _0x35934d()
+    function (err, res) {
+     if (err) {
+      reject(err)
      }
-     let _0x567d22 = []
-     _0x51434f
-      .on('data', function (_0x2b5127, _0x4d261c) {
-       _0x567d22.push(_0x2b5127)
+     let chunks = []
+     res
+      .on('data', function (chunk) {
+       chunks.push(chunk)
       })
       .on('end', () => {
-       _0x41cb49(Buffer.concat(_0x567d22))
+       resolve(Buffer.concat(chunks))
       })
-      .on('error', _0x403a63 => {
-       _0x35934d()
+      .on('error', error => {
+       reject(error)
       })
     }
    )
   })
- } catch (_0x2c5371) {
-  console.log(_0x2c5371)
-  return _0x2f3dd0
+ } catch (error) {
+  console.log(error)
+  return imageBuffer
  }
 }
-smd(
+
+Index(
  {
   cmdname: 'remini',
   desc: 'enhance image quality!',
   type: 'ai',
   filename: __filename,
  },
- async _0x1bd29b => {
-  let _0x4da3a4 = _0x1bd29b.image ? _0x1bd29b : _0x1bd29b.reply_message
-  if (!_0x4da3a4 || !_0x4da3a4.image) {
-   return await _0x1bd29b.send('*Reply to image, to enhance quality!*')
+ async message => {
+  let quotedMessage = message.image ? message : message.reply_message
+  if (!quotedMessage || !quotedMessage.image) {
+   return await message.send('*Reply to image, to enhance quality!*')
   }
   try {
-   let _0x5b1096 = await _0x4da3a4.download()
-   const _0x1ac1f7 = await processing(_0x5b1096, 'enhance')
-   await _0x1bd29b.send(_0x1ac1f7, {}, 'img', _0x1bd29b)
-   _0x5b1096 = false
-  } catch (_0x4eecc9) {
-   _0x1bd29b.error(_0x4eecc9 + '\n\nCommand: remini', _0x4eecc9, '*Process Denied :(*')
+   let downloadedImage = await quotedMessage.download()
+   const enhancedImage = await processing(downloadedImage, 'enhance')
+   await message.send(enhancedImage, {}, 'img', message)
+   downloadedImage = false
+  } catch (error) {
+   message.error(`${error}\n\nCommand: remini`, error, '*Process Denied :(*')
   }
  }
 )
-smd(
+
+Index(
  {
   cmdname: 'dehaze',
   desc: 'enhance image quality!',
   type: 'ai',
   filename: __filename,
  },
- async _0x2a1135 => {
-  let _0xa78bb3 = _0x2a1135.image ? _0x2a1135 : _0x2a1135.reply_message
-  if (!_0xa78bb3 || !_0xa78bb3.image) {
-   return await _0x2a1135.send('*Reply to image, to enhance quality!*')
+ async message => {
+  let quotedMessage = message.image ? message : message.reply_message
+  if (!quotedMessage || !quotedMessage.image) {
+   return await message.send('*Reply to image, to enhance quality!*')
   }
   try {
-   let _0x4e83ce = await _0xa78bb3.download()
-   const _0x65b7b8 = await processing(_0x4e83ce, 'dehaze')
-   await _0x2a1135.send(_0x65b7b8, {}, 'img', _0x2a1135)
-   _0x4e83ce = false
-  } catch (_0x44fb27) {
-   _0x2a1135.error(_0x44fb27 + '\n\nCommand: dehaze', _0x44fb27, '*Process Denied :(*')
+   let downloadedImage = await quotedMessage.download()
+   const dehasedImage = await processing(downloadedImage, 'dehaze')
+   await message.send(dehasedImage, {}, 'img', message)
+   downloadedImage = false
+  } catch (error) {
+   message.error(`${error}\n\nCommand: dehaze`, error, '*Process Denied :(*')
   }
  }
 )
-smd(
+
+Index(
  {
   cmdname: 'recolor',
   desc: 'enhance image quality!',
   type: 'ai',
   filename: __filename,
  },
- async _0x18f8e1 => {
-  let _0x220e4a = _0x18f8e1.image ? _0x18f8e1 : _0x18f8e1.reply_message
-  if (!_0x220e4a || !_0x220e4a.image) {
-   return await _0x18f8e1.send('*Reply to image, to enhance quality!*')
+ async message => {
+  let quotedMessage = message.image ? message : message.reply_message
+  if (!quotedMessage || !quotedMessage.image) {
+   return await message.send('*Reply to image, to enhance quality!*')
   }
   try {
-   let _0x38f64d = await _0x220e4a.download()
-   const _0x51042 = await processing(_0x38f64d, 'recolor')
-   await _0x18f8e1.send(_0x51042, {}, 'img', _0x18f8e1)
-   _0x38f64d = false
-  } catch (_0x4a62c8) {
-   _0x18f8e1.error(_0x4a62c8 + '\n\nCommand: recolor', _0x4a62c8, '*Process Denied :(*')
+   let downloadedImage = await quotedMessage.download()
+   const recoloredImage = await processing(downloadedImage, 'recolor')
+   await message.send(recoloredImage, {}, 'img', message)
+   downloadedImage = false
+  } catch (error) {
+   message.error(`${error}\n\nCommand: recolor`, error, '*Process Denied :(*')
   }
  }
 )
-smd(
+
+Index(
  {
   pattern: 'blackbox',
   desc: 'Get information and sources for a given text from Blackbox API.',
@@ -921,5 +534,274 @@ smd(
    console.error('Error in Blackbox command:', error)
    await message.error(error + '\n\nCommand: blackbox', error, '*Failed to fetch information from Blackbox.*')
   }
+ }
+)
+Index(
+ {
+  pattern: 'imagine',
+  desc: 'Generate an image using AI',
+  category: 'ai',
+ },
+ async (message, query) => {
+  try {
+   query = query || message.reply_text
+   if (!query) {
+    return await message.reply('*Give Me A Query To Generate An Image*')
+   }
+
+   let aiResponse = false
+   try {
+    const response = await fetch(
+     `https://aemt.me/openai?text=${query} \nNOTE: Make sure it looks like imagination, make it short and concise, also in English!`
+    )
+    const data = await response.json()
+    aiResponse = data && data.status && data.result ? data.result : ''
+   } catch (error) {
+    console.error('Error fetching AI response:', error)
+   }
+
+   try {
+    const image = await Draw(query)
+    await message.bot.sendMessage(message.chat, {
+     image: image,
+     caption: `*[IMAGINATION]:* \`\`\`${query}\`\`\`${
+      aiResponse ? `\n\n*[RESPONSE]:* \`\`\`${aiResponse}\`\`\` \n` : ''
+     }\n${Config.caption}`,
+    })
+    return
+   } catch (error) {
+    console.error('ERROR IN IMAGINE RESPONSE FROM IMAGINE API:', error)
+   }
+
+   if (!Config.OPENAI_API_KEY || !Config.OPENAI_API_KEY.startsWith('sk')) {
+    return message.reply(
+     "```You Don't Have OPENAI API KEY \nPlease Create OPENAI API KEY from Given Link \nhttps://platform.openai.com/account/api-keys\nAnd Set Key in Heroku OPENAI_API_KEY Var```"
+    )
+   }
+
+   return await message.bot.sendMessage(message.chat, {
+    image: {
+     url: await aiResponse(message, 'dalle', query),
+    },
+    caption: '*---Your DALL-E Result---*\n' + Config.caption,
+   })
+  } catch (error) {
+   await message.error(`${error}\n\ncommand: imagine`, error, '*_No response from Server side, Sorry!!_*')
+  }
+ }
+)
+
+Index(
+ {
+  pattern: 'imagine2',
+  desc: 'Generate an image using AI (alternative method)',
+  category: 'ai',
+ },
+ async (message, query) => {
+  try {
+   query = query || message.reply_text
+   if (!query) {
+    return await message.reply('*Give Me A Query To Generate An Image*')
+   }
+
+   const imageUrl = `https://gurugpt.cyclic.app/dalle?prompt=${encodeURIComponent(
+    query + ' \nNOTE: Make sure it looks like imagination'
+   )}`
+   let aiResponse = false
+
+   try {
+    const response = await fetch(
+     `https://aemt.me/openai?text=${query} \nNOTE: Make sure it looks like imagination, make it short and concise, also in English!`
+    )
+    const data = await response.json()
+    aiResponse = data && data.status && data.result ? data.result : ''
+   } catch (error) {
+    console.error('Error fetching AI response:', error)
+   }
+
+   try {
+    return await message.bot.sendMessage(message.chat, {
+     image: { url: imageUrl },
+     caption: `*[IMAGINATION]:* \`\`\`${query}\`\`\`${
+      aiResponse ? `\n\n*[RESPONSE]:* \`\`\`${aiResponse}\`\`\` \n` : ''
+     }\n${Config.caption}`,
+    })
+   } catch (error) {
+    console.error('ERROR IN IMAGINE RESPONSE FROM API GURUGPT:', error)
+   }
+
+   if (!Config.OPENAI_API_KEY || !Config.OPENAI_API_KEY.startsWith('sk')) {
+    return message.reply(
+     "```You Don't Have OPENAI API KEY \nPlease Create OPENAI API KEY from Given Link \nhttps://platform.openai.com/account/api-keys\nAnd Set Key in Heroku OPENAI_API_KEY Var```"
+    )
+   }
+
+   return await message.bot.sendMessage(message.chat, {
+    image: {
+     url: await aiResponse(message, 'dalle', query),
+    },
+    caption: '*---Your DALL-E Result---*\n' + Config.caption,
+   })
+  } catch (error) {
+   await message.error(`${error}\n\ncommand: imagine2`, error, '*_No response from Server side, Sorry!!_*')
+  }
+ }
+)
+
+async function Draw(prompt) {
+ const response = await fetch('https://api-inference.huggingface.co/models/prompthero/openjourney-v2', {
+  method: 'POST',
+  headers: {
+   'content-type': 'application/json',
+   Authorization: 'Bearer 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',
+  },
+  body: JSON.stringify({ inputs: prompt }),
+ })
+ const blob = await response.blob()
+ const arrayBuffer = await blob.arrayBuffer()
+ return Buffer.from(arrayBuffer)
+}
+
+Index(
+ {
+  pattern: 'rmbg',
+  category: 'ai',
+  filename: __filename,
+  desc: 'Remove image Background.',
+ },
+ async message => {
+  try {
+   if (!Config.REMOVE_BG_KEY) {
+    return message.reply(
+     "```You Don't Have REMOVE_BG_KEY \nPlease Create RemoveBG KEY from Given Link \nhttps://www.remove.bg/\nAnd Set Key in REMOVE_BG_KEY Var```"
+    )
+   }
+
+   const validTypes = ['imageMessage']
+   const quotedMessage = validTypes.includes(message.mtype) ? message : message.reply_message
+
+   if (!quotedMessage || !validTypes.includes(quotedMessage?.mtype)) {
+    return await message.send('*_Uhh Dear, Reply to an image_*')
+   }
+
+   const mediaPath = await message.bot.downloadAndSaveMediaMessage(quotedMessage)
+   const imageUrl = await TelegraPh(mediaPath)
+
+   try {
+    fs.unlinkSync(mediaPath)
+   } catch (error) {
+    console.error('Error deleting file:', error)
+   }
+
+   const removedBgImage = await aiResponse(message, 'rmbg', imageUrl)
+   if (removedBgImage) {
+    await message.send(removedBgImage, { caption: Config.caption }, 'image', message)
+   } else {
+    await message.send('*_Request could not be processed!!_*')
+   }
+  } catch (error) {
+   await message.error(`${error}\n\ncommand: rmbg`, error, '*_No response from remove.bg, Sorry!!_*')
+  }
+ }
+)
+
+Index(
+ {
+  pattern: 'readmore',
+  desc: 'Adds *readmore* in given text.',
+  category: 'general',
+  filename: __filename,
+ },
+ async (message, text) => {
+  try {
+   text = text || message.reply_text
+   if (!text) {
+    text = '*Uhh Dear, Please provide text*\n*Eg:- _.readmore text1 readmore text2_*'
+   } else {
+    text += ' '
+   }
+
+   const readMoreChar = String.fromCharCode(8206).repeat(4001)
+   const result = text.includes('readmore') ? text.replace(/readmore/, readMoreChar) : text.replace(' ', readMoreChar)
+
+   await message.reply(result)
+  } catch (error) {
+   await message.error(`${error}\n\ncommand : readmore`, error, false)
+  }
+ }
+)
+Index(
+ {
+  pattern: 'ads',
+  category: 'ai',
+  desc: 'Advertise your message by sending it to a provided number range.',
+  fromMe: true,
+ },
+ async (message, args) => {
+  try {
+   const input = args || message.reply_text
+   if (!input) {
+    return await message.reply(
+     `*Advertise your message*\n*by sending it to a provided number range.*\n${Config.prefix}advt 234902786xx,Your_text_here`
+    )
+   }
+
+   const [numberRange, userMessage] = input.split(',').map(s => s.trim())
+   if (!numberRange || !userMessage) {
+    return await message.send('*Invalid format. Please provide number range and message separated by a comma.*')
+   }
+
+   if (!numberRange.includes('x')) {
+    return message.send(
+     `*You did not add 'x' in the number range.*\n*Example: ${Config.prefix}advt 234902786xx,Your_Message_here*\n${Config.caption}`
+    )
+   }
+
+   await message.send('*Sending message to given number range. Please wait...*')
+
+   const fullMessage = `${userMessage}\n\n\n${Config.caption}`
+   const [prefix, suffix] = numberRange.split('x')
+   const xCount = (numberRange.match(/x/g) || []).length
+   const maxIterations = Math.pow(10, xCount)
+
+   if (xCount > 3) {
+    return await message.send("*Only up to 3 'x' characters are allowed in the number range*")
+   }
+
+   let sentCount = 0
+   let lastUser = ''
+   const sentNumbers = new Set()
+
+   for (let i = 0; i < maxIterations; i++) {
+    const paddedNumber = i.toString().padStart(xCount, '0')
+    const fullNumber = `${prefix}${paddedNumber}${suffix}@s.whatsapp.net`
+
+    const [userInfo] = await message.bot.onWhatsApp(fullNumber)
+    if (userInfo && !sentNumbers.has(fullNumber)) {
+     await sleep(1500)
+     await message.bot.sendMessage(userInfo.jid, { text: fullMessage })
+     sentNumbers.add(fullNumber)
+     sentCount++
+     lastUser = fullNumber.split('@')[0]
+    }
+   }
+
+   return await message.send(
+    `*_Advertisement of your message is complete._*\n\n*_Message successfully sent to ${sentCount} chats_*\nLast User: ${lastUser}\nNumbers searched: ${maxIterations}\n\n\n${Config.caption}`
+   )
+  } catch (error) {
+   await message.error(`${error}\n\ncommand: advt`, error, '*_No response from server side. Sorry!_*')
+  }
+ }
+)
+
+Index(
+ {
+  pattern: 'aitts',
+  desc: 'Text to Voice Using Eleven Labs AI',
+  category: 'ai',
+ },
+ async (message, args) => {
+  await aitts(message, args || message.reply_text)
  }
 )
