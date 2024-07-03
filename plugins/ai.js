@@ -479,49 +479,48 @@ Index(
  }
 )
 Index(
-  {
-   pattern: 'imagine2',
-   desc: 'Generate an image using AI',
-   type: 'ai',
-  },
-  async (message, query) => {
+ {
+  pattern: 'imagine2',
+  desc: 'Generate an image using AI',
+  type: 'ai',
+ },
+ async (message, query) => {
+  try {
+   query = query || message.reply_text
+   if (!query) {
+    return await message.reply('*Give Me A Query To Generate An Image*')
+   }
+
+   let aiResponse = false
    try {
-    query = query || message.reply_text;
-    if (!query) {
-     return await message.reply('*Give Me A Query To Generate An Image*');
-    }
- 
-    let aiResponse = false;
-    try {
-     const response = await fetch(`https://api.maher-zubair.tech/ai/imagine?q=${encodeURIComponent(query)}`);
-     const data = await response.json();
-     if (data && data.status === 200 && data.result && data.result.length > 0) {
-      aiResponse = data.result[0].images[0].url;
-     } else {
-      return await message.reply('*No image generated, please try again with a different prompt.*');
-     }
-    } catch (error) {
-     console.error('Error fetching AI response:', error);
-     return await message.reply('*Error generating image, please try again later.*');
-    }
- 
-    try {
-     await message.bot.sendMessage(message.chat, {
-      image: { url: aiResponse },
-      caption: `*[IMAGINATION]:* \n\n${query}\n\n${Config.caption}`,
-     });
-     return;
-    } catch (error) {
-     console.error('ERROR IN SENDING IMAGE RESPONSE:', error);
-     return await message.reply('*Error sending image, please try again later.*');
+    const response = await fetch(`https://api.maher-zubair.tech/ai/imagine?q=${encodeURIComponent(query)}`)
+    const data = await response.json()
+    if (data && data.status === 200 && data.result && data.result.length > 0) {
+     aiResponse = data.result[0].images[0].url
+    } else {
+     return await message.reply('*No image generated, please try again with a different prompt.*')
     }
    } catch (error) {
-    console.error('Error in imagine command:', error);
-    await message.reply('*_No response from Server side, Sorry!!_*');
+    console.error('Error fetching AI response:', error)
+    return await message.reply('*Error generating image, please try again later.*')
    }
+
+   try {
+    await message.bot.sendMessage(message.chat, {
+     image: { url: aiResponse },
+     caption: `*[IMAGINATION]:* \n\n${query}\n\n${Config.caption}`,
+    })
+    return
+   } catch (error) {
+    console.error('ERROR IN SENDING IMAGE RESPONSE:', error)
+    return await message.reply('*Error sending image, please try again later.*')
+   }
+  } catch (error) {
+   console.error('Error in imagine command:', error)
+   await message.reply('*_No response from Server side, Sorry!!_*')
   }
- );
- 
+ }
+)
 
 async function Draw(prompt) {
  const response = await fetch('https://api-inference.huggingface.co/models/prompthero/openjourney-v2', {
