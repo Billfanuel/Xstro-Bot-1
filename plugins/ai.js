@@ -1,5 +1,5 @@
 const fs = require('fs-extra')
-const { TelegraPh, aitts, Index, prefix, Config, parsedJid, sleep, aiResponse } = require('../lib')
+const { TelegraPh, aitts, Index, prefix, Config, parsedJid, sleep, aiResponse, Draw } = require('../lib')
 const axios = require('axios')
 const fetch = require('node-fetch')
 Index(
@@ -521,20 +521,6 @@ Index(
   }
  }
 )
-
-async function Draw(prompt) {
- const response = await fetch('https://api-inference.huggingface.co/models/prompthero/openjourney-v2', {
-  method: 'POST',
-  headers: {
-   'content-type': 'application/json',
-   Authorization: 'Bearer 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',
-  },
-  body: JSON.stringify({ inputs: prompt }),
- })
- const blob = await response.blob()
- const arrayBuffer = await blob.arrayBuffer()
- return Buffer.from(arrayBuffer)
-}
 
 Index(
  {
