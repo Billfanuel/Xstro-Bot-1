@@ -57,7 +57,7 @@ Index(
 
 Index(
  {
-  pattern: 'fgpt',
+  pattern: 'gpt2',
   desc: 'chat with an AI',
   type: 'ai',
  },
@@ -68,9 +68,9 @@ Index(
     return message.reply("Provide me a query, e.g., 'What is Life?'")
    }
 
-   const response = await fetch(`https://aemt.me/openai?text=${query}`)
+   const response = await fetch(`https://api.maher-zubair.tech/ai/chatgpt?q=${encodeURIComponent(query)}`)
    const data = await response.json()
-   if (data && data.status && data.result) {
+   if (data && data.status === 200 && data.result) {
     return await message.send(data.result)
    } else {
     await message.send('*_Error while getting GPT response!!_*')
