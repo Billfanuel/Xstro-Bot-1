@@ -25,19 +25,21 @@ Index(
  },
  async (message, query) => {
   try {
-   query = query
+   query = query || message.reply_text
    if (!query) {
     return message.reply("Provide me a query, e.g., 'What is Life?'")
    }
 
    try {
-    const response = await fetch(`https://aemt.me/openai?text=${query}`)
+    const response = await fetch(`https://api.maher-zubair.tech/ai/chatgpt2?q=${encodeURIComponent(query)}`)
     const data = await response.json()
-    if (data && data.status && data.result) {
+    if (data && data.status === 200 && data.result) {
      return await message.reply(data.result)
+    } else {
+     return message.reply('*_Error while getting GPT response!!_*')
     }
    } catch (error) {
-    console.error('Error fetching from aemt.me:', error)
+    console.error('Error fetching from api.maher-zubair.tech:', error)
    }
 
    if (!Config.OPENAI_API_KEY || !Config.OPENAI_API_KEY.startsWith('sk')) {
