@@ -478,63 +478,50 @@ Index(
   }
  }
 )
-
 Index(
- {
-  pattern: 'imagine2',
-  desc: 'Generate an image using AI (alternative method)',
-  type: 'ai',
- },
- async (message, query) => {
-  try {
-   query = query || message.reply_text
-   if (!query) {
-    return await message.reply('*Give Me A Query To Generate An Image*')
-   }
-
-   const imageUrl = `https://gurugpt.cyclic.app/dalle?prompt=${encodeURIComponent(
-    query + ' \nNOTE: Make sure it looks like imagination'
-   )}`
-   let aiResponse = false
-
+  {
+   pattern: 'imagine2',
+   desc: 'Generate an image using AI',
+   type: 'ai',
+  },
+  async (message, query) => {
    try {
-    const response = await fetch(
-     `https://aemt.me/openai?text=${query} \nNOTE: Make sure it looks like imagination, make it short and concise, also in English!`
-    )
-    const data = await response.json()
-    aiResponse = data && data.status && data.result ? data.result : ''
+    query = query || message.reply_text;
+    if (!query) {
+     return await message.reply('*Give Me A Query To Generate An Image*');
+    }
+ 
+    let aiResponse = false;
+    try {
+     const response = await fetch(`https://api.maher-zubair.tech/ai/imagine?q=${encodeURIComponent(query)}`);
+     const data = await response.json();
+     if (data && data.status === 200 && data.result && data.result.length > 0) {
+      aiResponse = data.result[0].images[0].url;
+     } else {
+      return await message.reply('*No image generated, please try again with a different prompt.*');
+     }
+    } catch (error) {
+     console.error('Error fetching AI response:', error);
+     return await message.reply('*Error generating image, please try again later.*');
+    }
+ 
+    try {
+     await message.bot.sendMessage(message.chat, {
+      image: { url: aiResponse },
+      caption: `*[IMAGINATION]:* \n\n${query}\n\n${Config.caption}`,
+     });
+     return;
+    } catch (error) {
+     console.error('ERROR IN SENDING IMAGE RESPONSE:', error);
+     return await message.reply('*Error sending image, please try again later.*');
+    }
    } catch (error) {
-    console.error('Error fetching AI response:', error)
+    console.error('Error in imagine command:', error);
+    await message.reply('*_No response from Server side, Sorry!!_*');
    }
-
-   try {
-    return await message.bot.sendMessage(message.chat, {
-     image: { url: imageUrl },
-     caption: `*[IMAGINATION]:* \`\`\`${query}\`\`\`${
-      aiResponse ? `\n\n*[RESPONSE]:* \`\`\`${aiResponse}\`\`\` \n` : ''
-     }\n${Config.caption}`,
-    })
-   } catch (error) {
-    console.error('ERROR IN IMAGINE RESPONSE FROM API GURUGPT:', error)
-   }
-
-   if (!Config.OPENAI_API_KEY || !Config.OPENAI_API_KEY.startsWith('sk')) {
-    return message.reply(
-     "```You Don't Have OPENAI API KEY \nPlease Create OPENAI API KEY from Given Link \nhttps://platform.openai.com/account/api-keys\nAnd Set Key in Heroku OPENAI_API_KEY Var```"
-    )
-   }
-
-   return await message.bot.sendMessage(message.chat, {
-    image: {
-     url: await aiResponse(message, 'dalle', query),
-    },
-    caption: '*DALL-E IMAGES*\n' + Config.caption,
-   })
-  } catch (error) {
-   await message.error(`${error}\n\ncommand: imagine2`, error, '*_No response from Server side, Sorry!!_*')
   }
- }
-)
+ );
+ 
 
 async function Draw(prompt) {
  const response = await fetch('https://api-inference.huggingface.co/models/prompthero/openjourney-v2', {
