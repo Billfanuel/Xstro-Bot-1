@@ -1,28 +1,12 @@
-const util = require('util')
 const fs = require('fs-extra')
-const { cmd } = require('../lib/plugins')
-const {
- formatp,
- TelegraPh,
- aitts,
- Index,
- prefix,
- runtime,
- Config,
- parsedJid,
- sleep,
- createUrl,
- aiResponse,
-} = require('../lib')
+const { TelegraPh, aitts, Index, prefix, Config, parsedJid, sleep, aiResponse } = require('../lib')
 const axios = require('axios')
 const fetch = require('node-fetch')
-const os = require('os')
-const speed = require('performance-now')
 Index(
  {
   pattern: 'chat',
   desc: 'chat with an AI',
-  category: 'ai',
+  type: 'ai',
  },
  async (message, query) => {
   try {
@@ -37,13 +21,13 @@ Index(
  {
   pattern: 'gpt',
   desc: 'chat with an AI',
-  category: 'ai',
+  type: 'ai',
  },
  async (message, query) => {
   try {
-   query = query || bot.reply_text
+   query = query
    if (!query) {
-    return message.reply("Provide me a query, e.g., 'Who is Suhail?'")
+    return message.reply("Provide me a query, e.g., 'What is Life?'")
    }
 
    try {
@@ -57,9 +41,7 @@ Index(
    }
 
    if (!Config.OPENAI_API_KEY || !Config.OPENAI_API_KEY.startsWith('sk')) {
-    return message.reply(
-     "```You don't have an OPENAI API KEY. Please create one from:\nhttps://platform.openai.com/account/api-keys\nAnd set it in Heroku OPENAI_API_KEY Var```"
-    )
+    return message.reply('*_No API Key Was Found._*')
    }
 
    if (!query) {
@@ -77,13 +59,13 @@ Index(
  {
   pattern: 'fgpt',
   desc: 'chat with an AI',
-  category: 'ai',
+  type: 'ai',
  },
  async (message, query) => {
   try {
    query = query || message.reply_text
    if (!query) {
-    return message.reply("Provide me a query, e.g., 'Who is Suhail?'")
+    return message.reply("Provide me a query, e.g., 'What is Life?'")
    }
 
    const response = await fetch(`https://aemt.me/openai?text=${query}`)
@@ -103,8 +85,7 @@ Index(
  {
   pattern: 'dalle',
   desc: 'chat with an AI',
-  category: 'ai',
-  filename: __filename,
+  type: 'ai',
  },
  async (message, query) => {
   try {
@@ -123,21 +104,19 @@ Index(
    }
 
    if (!Config.OPENAI_API_KEY || !Config.OPENAI_API_KEY.startsWith('sk')) {
-    return message.reply(
-     "```You don't have an OPENAI API KEY. Please create one from:\nhttps://platform.openai.com/account/api-keys\nAnd set it in Heroku OPENAI_API_KEY Var```"
-    )
+    return message.reply('*_No API Key Found._*')
    }
 
    return await message.bot.sendMessage(message.chat, {
     image: { url: await aiResponse(message, 'dalle', query) },
-    caption: '*---Your DALL-E Result---*\n' + Config.caption,
+    caption: '*DALL-E IMAGES*\n' + Config.caption,
    })
   } catch (error) {
    await message.error(`${error}\n\ncommand: dalle`, error, '*_No response from Dall-E AI, Sorry!!_*')
   }
  }
 )
-const astro_patch_AnonyMsg = {}
+const AnonyMsg = {}
 let isAnnonyMsgAlive = ''
 
 class AnonymousMsg {
@@ -155,7 +134,7 @@ Index(
  {
   pattern: 'anonymsg',
   desc: 'Send message Anonymously',
-  category: 'ai',
+  type: 'ai',
  },
  async (message, text, { smd: cmd }) => {
   try {
@@ -187,8 +166,8 @@ Index(
    if (parsedReceivers[0]) {
     const { date, time } = await getDateTime()
     const anonymousId = `anony-msg-${Math.floor(100000 + Math.random() * 900000)}`
-    astro_patch_AnonyMsg[anonymousId] = new AnonymousMsg()
-    const anonymousMessage = astro_patch_AnonyMsg[anonymousId]
+    AnonyMsg[anonymousId] = new AnonymousMsg()
+    const anonymousMessage = AnonyMsg[anonymousId]
 
     anonymousMessage.id = anonymousId
     anonymousMessage.sender = message.sender
@@ -196,7 +175,7 @@ Index(
     anonymousMessage.msgStatus = true
     anonymousMessage.senderMsg = message
 
-    const formattedMessage = `*ᴀsᴛᴀ-ᴍᴅ • ᴀɴɴᴏɴʏᴍᴏᴜs ᴍsɢ*\n\n*Msg_Id:* ${anonymousMessage.id}\n*Date:* _${date}_\n*Time:* _${time}_\n\n*Message:* ${messageContent}\n\n\n${Config.caption}`
+    const formattedMessage = `*ᴀɴɴᴏɴʏᴍᴏᴜs ᴍsɢ*\n\n*Msg_Id:* ${anonymousMessage.id}\n*Date:* _${date}_\n*Time:* _${time}_\n\n*Message:* ${messageContent}\n\n\n${Config.caption}`
 
     isAnnonyMsgAlive += `,${anonymousMessage.receiver}`
     await message.bot.sendMessage(anonymousMessage.receiver, { text: formattedMessage })
@@ -223,12 +202,12 @@ Index(
     }
 
     if (
-     message.reply_text.includes('ᴀsᴛᴀ-ᴍᴅ • ᴀɴɴᴏɴʏᴍᴏᴜs ᴍsɢ') &&
-     quotedLines[0].includes('ᴀsᴛᴀ-ᴍᴅ • ᴀɴɴᴏɴʏᴍᴏᴜs ᴍsɢ') &&
+     message.reply_text.includes('ᴀɴɴᴏɴʏᴍᴏᴜs ᴍsɢ') &&
+     quotedLines[0].includes('ᴀɴɴᴏɴʏᴍᴏᴜs ᴍsɢ') &&
      quotedLines[2].includes('Msg_Id')
     ) {
      const msgId = quotedLines[2].replace('*Msg_Id:* ', '').trim()
-     const anonymousMessage = astro_patch_AnonyMsg[msgId]
+     const anonymousMessage = AnonyMsg[msgId]
      if (!anonymousMessage) {
       return
      }
@@ -238,7 +217,7 @@ Index(
       if (firstWord === 'reply') {
        anonymousMessage.replyCount += 1
        const commaIndex = message.text.indexOf(',')
-       const replyContent = `*ᴀsᴛᴀ-ᴍᴅ • ʏᴏᴜʀ ᴀɴᴏɴʏ-ᴍsɢ ʀᴇᴘʟʏ*\n\n*_From @${
+       const replyContent = `*ʏᴏᴜʀ ᴀɴᴏɴʏ-ᴍsɢ ʀᴇᴘʟʏ*\n\n*_From @${
         anonymousMessage.receiver.split('@')[0]
        }_*\n*_Msg_Id: ${anonymousMessage.id}_*\n\n*Message:* ${message.text.slice(commaIndex + 1).trim()}\n\n\n\n${
         Config.caption
@@ -261,7 +240,7 @@ Index(
 
        if (anonymousMessage.replyCount >= 2) {
         isAnnonyMsgAlive = isAnnonyMsgAlive.replace(`,${message.sender}`, '')
-        delete astro_patch_AnonyMsg[msgId]
+        delete AnonyMsg[msgId]
        }
 
        return await message.reply(
@@ -292,92 +271,6 @@ Index(
    }
   } catch (error) {
    // Handle any errors here
-  }
- }
-)
-
-Index(
- {
-  pattern: 'advt',
-  alias: ['advertisement'],
-  category: 'ai',
-  desc: 'Advertise your Message by sending it to a provided number range.',
-  use: '234803xx,Your_text_here',
-  fromMe: true,
-  filename: __filename,
- },
- async (message, text) => {
-  try {
-   const input = text || message.reply_text
-   if (!input) {
-    return await message.reply(
-     '*Advertise your Message*\n*by sending it to provided number range.*\n' + `${prefix}advt 234803xx,Your_text_here`
-    )
-   }
-
-   const commaIndex = input.indexOf(',')
-   if (commaIndex === -1) {
-    return await message.send('*Invalid format. Please provide number and Message separated by a comma.*')
-   }
-
-   const numberPattern = input.slice(0, commaIndex).trim()
-   const messageContent = `${input.slice(commaIndex + 1).trim()}\n\n\n${Config.caption}`
-
-   if (!numberPattern.includes('x')) {
-    return message.send(
-     `*You did not add x in number.*\n*Ex: ${prefix}advt 234803xx,Your_Message_here*  \n ${Config.caption}`
-    )
-   }
-
-   await message.send('*Sending message to given number range.*\n*It may take some time, so please wait*')
-
-   const countOccurrences = (str, char) => str.split(char).length - 1
-   const prefix = numberPattern.split('x')[0]
-   const suffix = numberPattern.split('x')[countOccurrences(numberPattern, 'x')] || ''
-   const xCount = countOccurrences(numberPattern, 'x')
-
-   let rangeLimit
-   if (xCount === 1) {
-    rangeLimit = 10
-   } else if (xCount === 2) {
-    rangeLimit = 100
-   } else if (xCount === 3) {
-    rangeLimit = 1000
-   } else if (xCount > 3) {
-    return await message.send('*Only 3(x) are Allowed in number*')
-   }
-
-   let successCount = 0
-   let processedNumbers = ''
-   let lastProcessedNumber = ''
-
-   for (let i = 0; i < rangeLimit; i++) {
-    const currentNumber = `${prefix}${i}${suffix}@s.whatsapp.net`
-    const isValidNumber = await message.bot.onWhatsApp(currentNumber)
-
-    if (isValidNumber[0]) {
-     lastProcessedNumber = isValidNumber[0].jid
-     if (processedNumbers.includes(lastProcessedNumber)) {
-      continue
-     }
-
-     await sleep(1500)
-     await message.bot.sendMessage(lastProcessedNumber, {
-      text: messageContent,
-     })
-
-     processedNumbers += `,${lastProcessedNumber}`
-     successCount += 1
-    }
-   }
-
-   return await message.send(
-    `*_Advertisement of your Message is Done,_* \n\n*_Message Successfully sent to ${successCount} chats_*\n` +
-     `Last_User: ${lastProcessedNumber.split('@')[0]}\n` +
-     `Search_No: ${rangeLimit} numbers searched\n\n\n${Config.caption}`
-   )
-  } catch (error) {
-   await message.error(`${error}\n\ncommand: dalle`, error, '*_No response from Server side, Sorry!!_*')
   }
  }
 )
@@ -434,10 +327,9 @@ async function processing(imageBuffer, endpoint) {
 
 Index(
  {
-  cmdname: 'remini',
+  cmdname: 'hd',
   desc: 'enhance image quality!',
   type: 'ai',
-  filename: __filename,
  },
  async message => {
   let quotedMessage = message.image ? message : message.reply_message
@@ -460,7 +352,6 @@ Index(
   cmdname: 'dehaze',
   desc: 'enhance image quality!',
   type: 'ai',
-  filename: __filename,
  },
  async message => {
   let quotedMessage = message.image ? message : message.reply_message
@@ -483,7 +374,6 @@ Index(
   cmdname: 'recolor',
   desc: 'enhance image quality!',
   type: 'ai',
-  filename: __filename,
  },
  async message => {
   let quotedMessage = message.image ? message : message.reply_message
@@ -505,9 +395,7 @@ Index(
  {
   pattern: 'blackbox',
   desc: 'Get information and sources for a given text from Blackbox API.',
-  category: 'ai',
-  filename: __filename,
-  use: '<text>',
+  type: 'ai',
  },
  async (message, input) => {
   try {
@@ -540,7 +428,7 @@ Index(
  {
   pattern: 'imagine',
   desc: 'Generate an image using AI',
-  category: 'ai',
+  type: 'ai',
  },
  async (message, query) => {
   try {
@@ -574,16 +462,14 @@ Index(
    }
 
    if (!Config.OPENAI_API_KEY || !Config.OPENAI_API_KEY.startsWith('sk')) {
-    return message.reply(
-     "```You Don't Have OPENAI API KEY \nPlease Create OPENAI API KEY from Given Link \nhttps://platform.openai.com/account/api-keys\nAnd Set Key in Heroku OPENAI_API_KEY Var```"
-    )
+    return message.reply('*_No API Key Found._*')
    }
 
    return await message.bot.sendMessage(message.chat, {
     image: {
      url: await aiResponse(message, 'dalle', query),
     },
-    caption: '*---Your DALL-E Result---*\n' + Config.caption,
+    caption: '*DALL-E IMAGES*\n' + Config.caption,
    })
   } catch (error) {
    await message.error(`${error}\n\ncommand: imagine`, error, '*_No response from Server side, Sorry!!_*')
@@ -595,7 +481,7 @@ Index(
  {
   pattern: 'imagine2',
   desc: 'Generate an image using AI (alternative method)',
-  category: 'ai',
+  type: 'ai',
  },
  async (message, query) => {
   try {
@@ -640,7 +526,7 @@ Index(
     image: {
      url: await aiResponse(message, 'dalle', query),
     },
-    caption: '*---Your DALL-E Result---*\n' + Config.caption,
+    caption: '*DALL-E IMAGES*\n' + Config.caption,
    })
   } catch (error) {
    await message.error(`${error}\n\ncommand: imagine2`, error, '*_No response from Server side, Sorry!!_*')
@@ -665,16 +551,14 @@ async function Draw(prompt) {
 Index(
  {
   pattern: 'rmbg',
-  category: 'ai',
-  filename: __filename,
+  type: 'ai',
+
   desc: 'Remove image Background.',
  },
  async message => {
   try {
    if (!Config.REMOVE_BG_KEY) {
-    return message.reply(
-     "```You Don't Have REMOVE_BG_KEY \nPlease Create RemoveBG KEY from Given Link \nhttps://www.remove.bg/\nAnd Set Key in REMOVE_BG_KEY Var```"
-    )
+    return message.reply('*_API Key Not Found._*')
    }
 
    const validTypes = ['imageMessage']
@@ -707,33 +591,8 @@ Index(
 
 Index(
  {
-  pattern: 'readmore',
-  desc: 'Adds *readmore* in given text.',
-  category: 'general',
-  filename: __filename,
- },
- async (message, text) => {
-  try {
-   text = text || message.reply_text
-   if (!text) {
-    text = '*Uhh Dear, Please provide text*\n*Eg:- _.readmore text1 readmore text2_*'
-   } else {
-    text += ' '
-   }
-
-   const readMoreChar = String.fromCharCode(8206).repeat(4001)
-   const result = text.includes('readmore') ? text.replace(/readmore/, readMoreChar) : text.replace(' ', readMoreChar)
-
-   await message.reply(result)
-  } catch (error) {
-   await message.error(`${error}\n\ncommand : readmore`, error, false)
-  }
- }
-)
-Index(
- {
   pattern: 'ads',
-  category: 'ai',
+  type: 'ai',
   desc: 'Advertise your message by sending it to a provided number range.',
   fromMe: true,
  },
@@ -799,7 +658,7 @@ Index(
  {
   pattern: 'aitts',
   desc: 'Text to Voice Using Eleven Labs AI',
-  category: 'ai',
+  type: 'ai',
  },
  async (message, args) => {
   await aitts(message, args || message.reply_text)
