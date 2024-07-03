@@ -1,7 +1,6 @@
 <h1 align="center"> Xstro-Bot </h1>
-
 <p align="center">
-  <img src="https://github.com/AstroFx0011/Xstro-Bot/assets/173537772/3de237f8-8eef-46c6-91d5-6df2bcf41181" alt="banner" width="450">
+  <img src="https://github.com/AstroFx0011/Xstro-Bot/assets/173537772/dbde73e9-363e-4b10-8252-8a01e7cf6f7a" alt="banner" width="250">
 </p>
 
 <p align="center">
