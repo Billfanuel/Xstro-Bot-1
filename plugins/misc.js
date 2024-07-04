@@ -1,4 +1,4 @@
-const { Index, prefix } = require('../lib')
+const { Index, cmd, prefix } = require('../lib')
 const fs = require('fs-extra');
 const util = require('util');
 Index(
