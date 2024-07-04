@@ -1,6 +1,7 @@
 const config = require('../config')
 const { Index } = require('../lib')
 
+// Define the command using the Index function
 Index(
  {
   pattern: 'repo',
@@ -13,15 +14,14 @@ Index(
    const repoInfo = `
 \t 𝗫𝘀𝘁𝗿𝗼 𝗕𝗼𝘁 𝟮𝟬𝟮𝟰
 *_Creator_* AstroFX0011
-*_Porject_* https://github.com/AstroFx0011/Xstro-Bot
+*_Project_* https://github.com/AstroFx0011/Xstro-Bot
 \t ${config.botname}
-`.trim()
-
-   return await context.sendUi(context.jid, {
+      `.trim()
+   await context.sendUi(context.jid, {
     caption: repoInfo,
    })
   } catch (error) {
-   await context.error(`${error}\n\ncommand: repo`, error)
+   await context.error(`${error.message}\n\ncommand: repo`, error)
   }
  }
 )
