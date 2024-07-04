@@ -1,4 +1,4 @@
-<h1 align="center"> Xstro-Bot </h1>
+<h1 align="center"> Ｘｓｔｒｏ </h1>
 <p align="center">
   <img src="https://github.com/AstroFx0011/Xstro-Bot/assets/173537772/dbde73e9-363e-4b10-8252-8a01e7cf6f7a" alt="banner" width="250">
 </p>
