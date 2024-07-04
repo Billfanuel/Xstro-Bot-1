@@ -1,4 +1,4 @@
-const { Index, cmd, prefix } = require('../lib')
+const { Index, prefix } = require('../lib')
 const fs = require('fs-extra');
 const util = require('util');
 Index(
@@ -94,24 +94,19 @@ const createMediaUrl = async (message, urlCreator) => {
   }
 };
 
-cmd({
+Index({
   pattern: "url",
-  alias: ["createurl"],
-  category: "general",
+  category: "misc",
   filename: __filename,
   desc: "Convert image or video to URL.",
-  use: "<video | image>"
 }, async (message) => {
   await createMediaUrl(message, createUrl);
 });
 
-cmd({
-  pattern: "upload",
-  alias: ["url2"],
-  category: "general",
-  filename: __filename,
+Index({
+  pattern: "upload", 
+  category: "misc", 
   desc: "Upload image or video and get URL.",
-  use: "<video | image>"
 }, async (message) => {
   await createMediaUrl(message, (path) => createUrl(path, "uguMashi"));
 });
