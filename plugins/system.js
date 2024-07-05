@@ -1,5 +1,5 @@
 const { Index, ping } = require('../lib')
-const { menu } = require('../lib/Base/class')
+const { XstroMenu } = require('../lib/Base/class')
 
 Index(
  {
@@ -7,7 +7,7 @@ Index(
   desc: 'Get All Commands',
   category: 'system',
  },
- menu
+ XstroMenu
 )
 Index(
  {
