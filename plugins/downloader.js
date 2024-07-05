@@ -1,0 +1,2 @@
+const { Index } = require("../lib");
+
