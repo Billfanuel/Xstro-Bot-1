@@ -1,6 +1,6 @@
-const { Index, prefix } = require('../lib')
-const fs = require('fs-extra');
-const util = require('util');
+const { Index, prefix, createUrl } = require('../lib')
+const fs = require('fs-extra')
+const util = require('util')
 Index(
  {
   pattern: 'readmore',
@@ -65,48 +65,26 @@ Index(
   }
  }
 )
-const ALLOWED_MEDIA_TYPES = ["videoMessage", "imageMessage"];
 
-const createMediaUrl = async (message, urlCreator) => {
-  try {
-    const mediaMessage = ALLOWED_MEDIA_TYPES.includes(message.mtype) ? message : message.reply_message;
-
-    if (!mediaMessage || !ALLOWED_MEDIA_TYPES.includes(mediaMessage?.mtype)) {
-      return message.reply("*_Please reply to an image or video!_*");
-    }
-
-    const mediaPath = await message.bot.downloadAndSaveMediaMessage(mediaMessage);
-    const urlResult = await urlCreator(mediaPath);
-
-    try {
-      fs.unlinkSync(mediaPath);
-    } catch (unlinkError) {
-      console.error("Failed to delete temporary file:", unlinkError);
-    }
-
-    if (!urlResult) {
-      return message.reply("*_Failed to create URL!_*");
-    }
-
-    await message.send(util.format(urlResult), {}, "asta", mediaMessage);
-  } catch (error) {
-    await message.error(`${error}\n\ncommand: ${message.body}`, error);
-  }
-};
-
-Index({
-  pattern: "url",
-  category: "misc",
+Index(
+ {
+  pattern: 'url',
+  category: 'misc',
   filename: __filename,
-  desc: "Convert image or video to URL.",
-}, async (message) => {
-  await createMediaUrl(message, createUrl);
-});
+  desc: 'Convert image or video to URL.',
+ },
+ async message => {
+  await createMediaUrl(message, createUrl)
+ }
+)
 
-Index({
-  pattern: "upload", 
-  category: "misc", 
-  desc: "Upload image or video and get URL.",
-}, async (message) => {
-  await createMediaUrl(message, (path) => createUrl(path, "uguMashi"));
-});
+Index(
+ {
+  pattern: 'upload',
+  category: 'misc',
+  desc: 'Upload image or video and get URL.',
+ },
+ async message => {
+  await createMediaUrl(message, path => createUrl(path, 'uguMashi'))
+ }
+)
