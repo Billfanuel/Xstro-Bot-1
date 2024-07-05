@@ -15,7 +15,7 @@ Index(
 \t 𝗫𝘀𝘁𝗿𝗼 𝗕𝗼𝘁 𝟮𝟬𝟮𝟰
 *_Creator_* AstroFX0011
 *_Project_* https://github.com/AstroFx0011/Xstro-Bot
-\t ${config.botname}
+\t\t ${config.botname}
       `.trim()
    await context.sendUi(context.jid, {
     caption: repoInfo,
