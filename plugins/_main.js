@@ -12,7 +12,7 @@ Index(
  async context => {
   try {
    const repoInfo = `
-\t 𝗫𝘀𝘁𝗿𝗼 𝗕𝗼𝘁 𝟮𝟬𝟮𝟰
+\t Ｘｓｔｒｏ
 *_Creator_* AstroFX0011
 *_Project_* https://github.com/AstroFx0011/Xstro-Bot
 \t\t ${config.botname}
