@@ -134,7 +134,7 @@ class AnonymousMsg {
 
 Index(
  {
-  pattern: 'anonymsg',
+  pattern: 'anmsg',
   desc: 'Send message Anonymously',
   category: 'ai',
  },
