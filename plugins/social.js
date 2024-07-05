@@ -1,12 +1,15 @@
-const { Index, fetchJson, fancytext, yt, getBuffer, prefix, Config, isValidUrl, formatDuration } = require('../lib')
-const { search, download } = require('aptoide-scraper')
-const googleTTS = require('google-tts-api')
-const ytdl = require('ytdl-secktor')
-const yts = require('secktor-pack')
-const fs = require('fs-extra')
-const axios = require('axios')
-const fetch = require('node-fetch')
-var videotime = 2000
+const { Index } = require('../lib')
+const TelegramStickers = require('../lib/Base/social')
+const InstaDl = require('../lib/Base/social')
+const fbDl = require('../lib/Base/social')
+const SearchApk = require('../lib/Base/social')
+const SoundCloud = require('../lib/Base/social')
+const ApkDl = require('../lib/Base/social')
+const Wiki = require('../lib/Base/social')
+const fbToAudio = require('../lib/Base/social')
+const spotifyDL = require('../lib/Base/social')
+const googleDriveDl = require('../lib/Base/social')
+const AllSocial = require('../lib/Base/social')
 
 Index(
  {
@@ -14,40 +17,7 @@ Index(
   desc: 'Download media from various social platforms.',
   category: 'downloader',
  },
- async (m, url) => {
-  try {
-   if (!url) {
-    return await m.send('*_Please provide a URL!_*')
-   }
-
-   const apiUrl = `https://api.maher-zubair.tech/download/alldownload2?url=${encodeURIComponent(url)}`
-   const response = await fetch(apiUrl)
-
-   if (!response.ok) {
-    return await m.send(`*_Error: ${response.status} ${response.statusText}_*`)
-   }
-
-   const data = await response.json()
-   const result = data.result
-
-   if (!result || !result.medias || !result.medias.length) {
-    return await m.send('*_No media found!_*')
-   }
-
-   const { title, thumbnail, medias } = result
-   const caption = `*Title:* ${title}\n\n*Source:* ${medias[0].source}`
-
-   await m.bot.sendFromUrl(m.from, thumbnail, caption, m, {}, 'image')
-
-   for (const media of medias) {
-    const { url, formattedSize, quality, extension } = media
-    const mediaCaption = `*Quality:* ${quality}\n*Size:* ${formattedSize}\n*Extension:* ${extension}`
-    await m.bot.sendFromUrl(m.from, url, mediaCaption, m, {}, 'video')
-   }
-  } catch (e) {
-   await m.error(`${e}\n\ncommand: allsocial`, e)
-  }
- }
+ AllSocial
 )
 Index(
  {
@@ -55,119 +25,16 @@ Index(
   desc: 'Download files from Google Drive.',
   category: 'downloader',
  },
- async (m, url) => {
-  try {
-   if (!url) {
-    return await m.send('*_Please provide a Google Drive URL!_*')
-   }
-
-   const apiUrl = `https://api.maher-zubair.tech/download/gdrive?url=${encodeURIComponent(url)}`
-   const response = await fetch(apiUrl)
-
-   if (!response.ok) {
-    return await m.send(`*_Error: ${response.status} ${response.statusText}_*`)
-   }
-
-   const data = await response.json()
-
-   if (data.status !== 200) {
-    return await m.send(`*_Error: ${data.status} - ${data.result || 'Unknown error'}_*`)
-   }
-
-   const { downloadUrl, fileName, fileSize, mimetype } = data.result
-   const caption = `*File:* ${fileName}\n*Size:* ${fileSize}\n*Type:* ${mimetype}`
-
-   await m.bot.sendFromUrl(m.from, downloadUrl, caption, m, {}, 'file')
-  } catch (e) {
-   await m.error(`${e}\n\ncommand: gdrive`, e)
-  }
- }
+ googleDriveDl
 )
 Index(
  {
-  pattern: 'spotify2',
+  pattern: 'spotify',
   desc: 'Downloads a Spotify song.',
   category: 'downloader',
  },
- async (message, input) => {
-  try {
-   const url = input.trim()
-   if (!url || !isValidUrl(url)) {
-    return await message.send('*_Please provide a valid Spotify URL._*')
-   }
-
-   const apiUrl = `https://api.maher-zubair.tech/download/spotify?url=${encodeURIComponent(url)}`
-   const response = await axios.get(apiUrl)
-   const data = response.data
-
-   if (!data || data.status !== 200) {
-    return await message.reply('*Failed to download the Spotify song.*')
-   }
-
-   const { song, artist, album_name, release_date, cover_url, url: songUrl } = data.result
-
-   let output = `*Song:* ${song}\n`
-   output += `*Artist:* ${artist.join(', ')}\n`
-   output += `*Album:* ${album_name}\n`
-   output += `*Release Date:* ${release_date}\n\n`
-   output += `*Cover Image:* ${cover_url}\n\n`
-
-   const buffer = await axios.get(songUrl, { responseType: 'arraybuffer' })
-   const fileName = `${song.replace(/\s/g, '_')}.mp3`
-
-   await message.bot.sendMessage(
-    message.chat,
-    {
-     audio: buffer.data,
-     fileName: fileName,
-     mimetype: 'audio/mpeg',
-     caption: output,
-    },
-    { quoted: message }
-   )
-  } catch (error) {
-   await message.error(error + '\n\nCommand: spotify2', error, '*Failed to download the Spotify song.*')
-  }
- }
+ spotifyDL
 )
-
-
-Index(
-  {
-    pattern: 'twitter',
-    desc: 'Downloads Twitter videos.',
-    category: 'downloader',
-  },
-  async (message, input) => {
-    try {
-      let query = input.split(' ')[0].trim();
-      if (!query || !query.startsWith('https://')) {
-        return await message.send('*_Provide Twitter Video Link_*');
-      }
-
-      let video = await fetchJson('https://api.maher-zubair.tech/download/twitter?url=' + query);
-
-      if (!video || video.status !== 200) {
-        return await message.reply('*Invalid Video URL!*');
-      }
-
-      let caption = video.data.caption
-        ? video.data.caption
-        : `*Twitter Video Download*\n\n*Username:* ${video.data.username}`;
-
-      return await message.bot.sendMessage(
-        message.chat,
-        {
-          video: { url: video.data.HD },
-          caption: caption,
-        },
-        { quoted: message }
-      );
-    } catch (error) {
-      await message.error(error.toString() + '\n\nCommand: twitter', error, '*_Video not found!_*');
-    }
-  }
-);
 
 Index(
  {
@@ -175,98 +42,7 @@ Index(
   desc: 'Downloads telegram stickers.',
   category: 'downloader',
  },
- async (_0x19df48, _0x155c01) => {
-  try {
-   if (!_0x155c01) {
-    return await _0x19df48.reply(
-     '_Enter a tg sticker url_\nEg: .tgs https://t.me/addstickers/Oldboyfinal\nKeep in mind that there is a chance of ban if used frequently'
-    )
-   }
-   if (!_0x155c01.includes('addstickers')) {
-    return await _0x19df48.reply(
-     '_Uhh Please Enter a Valid tg sticker url_\nEg: .tgs https://t.me/addstickers/Oldboyfinal'
-    )
-   }
-   let _0x2a4fb1 = _0x155c01.split('|')[0]
-   let _0x27aa70 = _0x2a4fb1.split('/addstickers/')[1]
-   let { result: _0x4a601d } = await fetchJson(
-    'https://api.telegram.org/bot891038791:AAHWB1dQd-vi0IbH2NjKYUk-hqQ8rQuzPD4/getStickerSet?name=' +
-     encodeURIComponent(_0x27aa70) +
-     ' '
-   )
-   let _0x54b45a = _0x155c01.split('|')[1] || ''
-   let _0x56bec3 =
-    'Total stickers: ' +
-    _0x4a601d.stickers.length +
-    '\n*Estimated complete in:* ' +
-    _0x4a601d.stickers.length * 1.5 +
-    ' seconds\nKeep in mind that there is a chance of a ban if used frequently'
-   if (_0x4a601d.is_animated) {
-    return await _0x19df48.reply('Animated stickers are not supported')
-   } else if (_0x54b45a.startsWith('info')) {
-    return await _0x19df48.reply(_0x56bec3)
-   }
-   let _0x26c3a3 = parseInt(_0x54b45a.split(',')[0]) || 10
-   let _0x33784b = parseInt(_0x54b45a.split(',')[1]) || 0
-   let _0x4cca92 = _0x54b45a.split(';')[1] || 'Sticker'
-   let _0x3a6ece = true
-   if (_0x4cca92.includes('photo')) {
-    _0x3a6ece = false
-    _0x4cca92 = 'Photo'
-   }
-   if (_0x26c3a3 > _0x4a601d.stickers.length) {
-    _0x26c3a3 = _0x4a601d.stickers.length
-   }
-   if (_0x33784b > _0x4a601d.stickers.length) {
-    _0x33784b = _0x4a601d.stickers.length - 5
-   }
-   if (_0x33784b > _0x26c3a3) {
-    let _0xe6592a = _0x26c3a3
-    _0x26c3a3 = _0x33784b
-    _0x33784b = _0xe6592a
-   }
-   await _0x19df48.reply(
-    _0x56bec3 +
-     '\n\n_Downloading as ' +
-     _0x4cca92 +
-     ' From index *' +
-     _0x33784b +
-     '* to *' +
-     _0x26c3a3 +
-     '*._\nIf you wants more to download then use Like \n\n .tgs ' +
-     _0x2a4fb1 +
-     ' |  10 ,  20 ; photo'
-   )
-   for (_0x33784b; _0x33784b < _0x26c3a3; _0x33784b++) {
-    let _0x4de16f = await fetchJson(
-     'https://api.telegram.org/bot891038791:AAHWB1dQd-vi0IbH2NjKYUk-hqQ8rQuzPD4/getFile?file_id=' +
-      _0x4a601d.stickers[_0x33784b].file_id
-    )
-    let _0x3c2608 =
-     'https://api.telegram.org/file/bot891038791:AAHWB1dQd-vi0IbH2NjKYUk-hqQ8rQuzPD4/' + _0x4de16f.result.file_path
-    if (_0x3a6ece) {
-     let _0x13ee38 = await getBuffer(_0x3c2608)
-     await _0x19df48.reply(
-      _0x13ee38,
-      {
-       packname: Config.packname,
-       author: 'Asta-Md',
-      },
-      'sticker'
-     )
-    } else {
-     await _0x19df48.bot.sendMessage(_0x19df48.chat, {
-      image: {
-       url: _0x3c2608,
-      },
-      caption: '*_Telegram Sticker At Index ' + (_0x33784b + 1) + ' Downloaded_*',
-     })
-    }
-   }
-  } catch (_0x5a840a) {
-   await _0x19df48.error(_0x5a840a + '\n\ncommand: tgs', _0x5a840a, '*_Error Sending telegram stickers!!!_*')
-  }
- }
+ TelegramStickers
 )
 Index(
  {
@@ -274,382 +50,55 @@ Index(
   desc: 'Downloads Facebook videos in audio.',
   category: 'downloader',
  },
- async (message, input) => {
-  try {
-   let query = input.split(' ')[0].trim()
-   if (!query || !query.startsWith('https://')) {
-    return await message.send('*_Please provide a valid Facebook Video URL._')
-   }
-   let video = await fetchJson('https://api-smd.onrender.com/api/fbdown?url=' + query)
-   if (!video || !video.status) {
-    return await message.reply('*Invalid Video URL!*')
-   }
-   return await message.bot.sendMessage(message.chat,{video: { url: video.result.audio,}, caption: Config.caption,}, { quoted: message,})
-  } catch (error) {
-   await message.error(error + '\n\nCommand: facebook', error, '*_Video not found!_*')
-  }
- }
+ fbToAudio
 )
 Index(
  {
-  pattern: 'instagram2',
+  pattern: 'insta',
   desc: 'Download media from Instagram.',
   category: 'downloader',
  },
- async (m, providedUrl = '') => {
-  try {
-   const url = providedUrl.trim()
-   if (!url) {
-    return await m.send('*_Please provide an Instagram URL!_*')
-   }
-
-   const apiUrl = `https://api.maher-zubair.tech/download/instagram?url=${encodeURIComponent(url)}`
-   const response = await fetch(apiUrl)
-
-   if (!response.ok) {
-    return await m.send(`*_Error: ${response.status} ${response.statusText}_*`)
-   }
-
-   const data = await response.json()
-
-   if (data.status !== 200) {
-    return await m.send(`*_Error: ${data.status} - ${data.result || 'Unknown error'}_*`)
-   }
-
-   const mediaData = data.result[0]
-
-   if (!mediaData) {
-    return await m.send('*_No media found!_*')
-   }
-
-   const { thumbnail, url: mediaUrl, wm } = mediaData
-   const caption = `*Watermark:* ${wm}\n\n_Note: This media may have a watermark._`
-
-   await m.bot.sendFromUrl(m.from, thumbnail, caption, m, {}, 'image')
-   await m.bot.sendFromUrl(m.from, mediaUrl, '', m, {}, 'video')
-  } catch (e) {
-   await m.error(`${e}\n\ncommand: instagram2`, e)
-  }
- }
+ InstaDl
 )
-Index(
- {
-  pattern: 'tgs2',
-  desc: 'Downloads telegram stickers.',
-  category: 'downloader',
- },
- async (message, url) => {
-  try {
-   if (!url) {
-    return await message.reply(
-     '_Enter a tg sticker url_\nEg: .tgs https://t.me/addstickers/Oldboyfinal\nKeep in mind that there is a chance of ban if used frequently'
-    )
-   }
-
-   if (!url.includes('addstickers')) {
-    return await message.reply(
-     '_Uhh Please Enter a Valid tg sticker url_\nEg: .tgs https://t.me/addstickers/Oldboyfinal'
-    )
-   }
-
-   const stickerUrl = url.split('|')[0]
-   const stickerName = stickerUrl.split('/addstickers/')[1]
-   const { result: stickerSet } = await fetchJson(
-    `https://api.telegram.org/bot891038791:AAHWB1dQd-vi0IbH2NjKYUk-hqQ8rQuzPD4/getStickerSet?name=${encodeURIComponent(
-     stickerName
-    )}`
-   )
-
-   const options = url.split('|')[1] || ''
-   const stickerInfo = `Total stickers: ${stickerSet.stickers.length}\n*Estimated complete in:* ${
-    stickerSet.stickers.length * 1.5
-   } seconds\nKeep in mind that there is a chance of a ban if used frequently`
-
-   if (stickerSet.is_animated) {
-    return await message.reply('Animated stickers are not supported')
-   } else if (options.startsWith('info')) {
-    return await message.reply(stickerInfo)
-   }
-
-   const [start, end] = options.split(',').map(value => parseInt(value) || 0)
-   const [, outputType] = options.split(';')
-   const isSticker = !outputType || outputType.toLowerCase() !== 'photo'
-
-   const startIndex = Math.min(start || 10, stickerSet.stickers.length)
-   const endIndex = Math.min(end || startIndex + 10, stickerSet.stickers.length)
-
-   await message.reply(
-    `${stickerInfo}\n\n_Downloading as ${
-     isSticker ? 'Sticker' : 'Photo'
-    } From index *${startIndex}* to *${endIndex}*._\nIf you want more to download, use:\n\n.tgs ${stickerUrl} | ${
-     startIndex + 10
-    }, ${endIndex + 10}; ${isSticker ? 'sticker' : 'photo'}`
-   )
-
-   for (let i = startIndex - 1; i < endIndex; i++) {
-    const { result: fileInfo } = await fetchJson(
-     `https://api.telegram.org/bot891038791:AAHWB1dQd-vi0IbH2NjKYUk-hqQ8rQuzPD4/getFile?file_id=${stickerSet.stickers[i].file_id}`
-    )
-    const fileUrl = `https://api.telegram.org/file/bot891038791:AAHWB1dQd-vi0IbH2NjKYUk-hqQ8rQuzPD4/${fileInfo.file_path}`
-
-    if (isSticker) {
-     const sticker = await getBuffer(fileUrl)
-     await message.reply(sticker, { packname: Config.packname, author: 'Asta-Md' }, 'sticker')
-    } else {
-     await message.bot.sendMessage(message.chat, {
-      image: { url: fileUrl },
-      caption: `*_Telegram Sticker At Index ${i + 1} Downloaded_*`,
-     })
-    }
-   }
-  } catch (error) {
-   await message.error(`${error}\n\ncommand: tgs`, error, '*_Error Sending telegram stickers!!!_*')
-  }
- }
-)
-
 Index(
  {
   pattern: 'wikimedia',
   desc: 'Downloads wikimedia images.',
   category: 'downloader',
  },
- async (m, query) => {
-  try {
-   if (!query) {
-    return await m.send('*_Please Give me search query!_*')
-   }
-
-   const { wikimedia } = require('../lib')
-   const results = (await wikimedia(query)) || []
-
-   if (!results || !results[0]) {
-    return await m.send('*_No Results Found!_*')
-   }
-
-   const maxResults =
-    m.iscreator && query.split('|')[1] === 'all' ? results.length : results.length > 5 ? 5 : results.length
-
-   for (let i = 0; i < maxResults; i++) {
-    try {
-     m.bot.sendFromUrl(
-      m.from,
-      results[i].image,
-      `Title: ${results[i].title}\n*Source:* ${results[i].source}`,
-      m,
-      {},
-      'image'
-     )
-    } catch {}
-   }
-  } catch (e) {
-   await m.error(`${e}\n\ncommand: insta`, e)
-  }
- }
+ Wiki
 )
 Index(
  {
   pattern: 'facebook',
   desc: 'Downloads Facebook videos in HD.',
   category: 'downloader',
-  filename: __filename,
-  use: '<add Facebook URL>',
  },
- async (message, input) => {
-  try {
-   let query = input.split(' ')[0].trim()
-   if (!query || !query.startsWith('https://')) {
-    return await message.send(
-     '*_Please provide a valid Facebook Video URL._*\n*Example: ' +
-      prefix +
-      'fb https://www.facebook.com/watch/?v=2018727118289093_*'
-    )
-   }
-   let video = await fetchJson('https://api-smd.onrender.com/api/fbdown?url=' + query)
-   if (!video || !video.status) {
-    return await message.reply('*Invalid Video URL!*')
-   }
-   return await message.bot.sendMessage(
-    message.chat,
-    {
-     video: {
-      url: video.result.HD, // Assuming you want the HD quality video
-     },
-     caption: Config.caption,
-    },
-    {
-     quoted: message,
-    }
-   )
-  } catch (error) {
-   await message.error(error + '\n\nCommand: facebook', error, '*_Video not found!_*')
-  }
- }
+ fbDl
 )
 Index(
  {
-  pattern: 'apk',
-  alias: ['modapk'],
-  desc: 'Downloads apks  .',
+  pattern: 'apkdl',
+  desc: 'Downloads apk.',
   category: 'downloader',
-  filename: __filename,
-  use: '<add sticker url.>',
  },
- async (_0x7b09ff, _0x4af114) => {
-  try {
-   if (!_0x4af114) {
-    return _0x7b09ff.reply('*_Uhh dear, Give me App Name!_*')
-   }
-   let _0x468cc8 = await search(_0x4af114)
-   let _0x538b40 = {}
-   if (_0x468cc8.length) {
-    _0x538b40 = await download(_0x468cc8[0].id)
-   } else {
-    return _0x7b09ff.reply('*_Apk not found, Try another name!!_*')
-   }
-   const _0x48bc12 = parseInt(_0x538b40.size)
-   if (_0x48bc12 > 200) {
-    return _0x7b09ff.reply('❌ File size bigger than 200mb.')
-   }
-   const _0x31321c = _0x538b40.dllink
-   let _0x24f726 = await fancytext(
-    '『 *ᗩᑭᏦ  ᗞᝪᗯᑎしᝪᗩᗞᗴᖇ* 』\n\n*APP Name :* ' +
-     _0x538b40.name +
-     '\n*App Id :* ' +
-     _0x538b40.package +
-     '\n*Last Up :* ' +
-     _0x538b40.lastup +
-     '\n*App Size :* ' +
-     _0x538b40.size +
-     '\n\n\n ' +
-     Config.caption,
-    25
-   )
-   const _0x3e266b = (_0x538b40?.name || 'Downloader') + '.apk'
-   const _0x585f79 = 'temp/' + _0x3e266b
-   let _0x533c85 = await _0x7b09ff.reply(
-    _0x538b40.icon,
-    {
-     caption: _0x24f726,
-    },
-    'img',
-    _0x7b09ff
-   )
-   axios
-    .get(_0x31321c, {
-     responseType: 'stream',
-    })
-    .then(_0x3cdb1d => {
-     const _0x406256 = fs.createWriteStream(_0x585f79)
-     _0x3cdb1d.data.pipe(_0x406256)
-     return new Promise((_0xd7f976, _0x27915) => {
-      _0x406256.on('finish', _0xd7f976)
-      _0x406256.on('error', _0x27915)
-     })
-    })
-    .then(() => {
-     let _0x389371 = {
-      document: fs.readFileSync(_0x585f79),
-      mimetype: 'application/vnd.android.package-archive',
-      fileName: _0x3e266b,
-     }
-     _0x7b09ff.bot.sendMessage(_0x7b09ff.jid, _0x389371, {
-      quoted: _0x533c85,
-     })
-     try {
-      fs.unlink(_0x585f79)
-     } catch {}
-    })
-    .catch(_0x2490b5 => {
-     try {
-      fs.unlink(_0x585f79)
-     } catch {}
-     _0x7b09ff.reply('*_Apk not Found, Sorry_*')
-    })
-  } catch (_0x4540ef) {
-   await _0x7b09ff.error(_0x4540ef + '\n\ncommand: apk', _0x4540ef, '*_Apk not Found!_*')
-  }
- }
+ ApkDl
 )
 Index(
  {
-  pattern: 'apks',
-  alias: ['apksearch'],
+  pattern: 'srcapk',
   desc: 'Search App',
   category: 'downloader',
-  filename: __filename,
-  use: '<Search Query>',
  },
- async (_0x19d516, _0x1cb962) => {
-  try {
-   if (!_0x1cb962) {
-    return await _0x19d516.reply('*_Uhh pLease, give me app name!_*')
-   }
-   const _0x4ac8f2 = await search(_0x1cb962)
-   if (_0x4ac8f2.length) {
-    let _0x3d85b = await download(_0x4ac8f2[0].id)
-    let _0x307e6f =
-     '*ᴀsᴛᴀ-ᴍᴅ • ᴀᴘᴋ ᴅᴏᴡɴʟᴏᴀᴅ ʟɪsᴛ* \n*________________________________* \n\n*_Reply Any Number To Download._*\n_Results For : ' +
-     _0x1cb962 +
-     '_ \n'
-    for (let _0x5a5920 = 0; _0x5a5920 < _0x4ac8f2.length; _0x5a5920++) {
-     _0x307e6f +=
-      '\n*' + (_0x5a5920 + 1) + ' : ' + _0x4ac8f2[_0x5a5920].name + '* \n*Id : ' + _0x4ac8f2[_0x5a5920].id + '* \n'
-    }
-    return await _0x19d516.sendMessage(
-     _0x19d516.chat,
-     {
-      image: {
-       url: _0x3d85b.icon,
-      },
-      caption: _0x307e6f,
-     },
-     {
-      quoted: _0x19d516,
-     }
-    )
-   } else {
-    return _0x19d516.reply('*_APP not Found, Try Other Name_*')
-   }
-  } catch (_0xa7fd60) {
-   _0x19d516.error(_0xa7fd60 + '\n\ncommand: apks', _0xa7fd60)
-  }
- }
+ SearchApk
 )
 Index(
  {
-  pattern: 'soundcloud',
-  alias: ['scdl', 'scdownload'],
+  pattern: 'scloud',
   desc: 'Download audio from SoundCloud.',
   category: 'downloader',
-  filename: __filename,
-  use: '<SoundCloud audio URL>',
  },
- async (msg, query) => {
-  try {
-   const url = query.trim()
-   if (!url) {
-    return await msg.reply('*Please provide a SoundCloud audio URL.*')
-   }
-
-   const apiUrl = `https://api.maher-zubair.tech/download/soundcloud?url=${encodeURIComponent(url)}`
-   const response = await fetch(apiUrl).then(res => res.json())
-
-   if (!response || response.status !== 200) {
-    return await msg.reply('*An error occurred while downloading the SoundCloud audio.*')
-   }
-
-   const result = response.result
-   const audioUrl = result.link
-   const thumbnailUrl = result.thumb
-   const title = result.title
-   const downloadCount = result.download_count
-
-   await msg.bot.sendAudio(msg.chat, audioUrl, title, downloadCount, thumbnailUrl, { quoted: msg })
-  } catch (err) {
-   await msg.error(err + '\n\ncommand: soundcloud', err, '*An error occurred while downloading the SoundCloud audio.*')
-  }
- }
+ SoundCloud
 )
 Index(
  {
