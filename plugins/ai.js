@@ -1,5 +1,5 @@
 const fs = require('fs-extra')
-const { TelegraPh, aitts, Index, prefix, Config, parsedJid, sleep, aiResponse, Draw } = require('../lib')
+const { TelegraPh, aitts, Index, prefix, Config, parsedJid, sleep, aiResponse, Draw, getDateTime } = require('../lib')
 const axios = require('axios')
 const fetch = require('node-fetch')
 Index(
@@ -95,24 +95,25 @@ Index(
     return await message.reply('*Give Me A Query To Get Dall-E Response?*')
    }
 
-   const imageUrl = `https://gurugpt.cyclic.app/dalle?prompt=${encodeURIComponent(query)}`
+   const apiUrl = `https://api.maher-zubair.tech/ai/aiimg?q=${encodeURIComponent(query)}`
+
    try {
-    return await message.bot.sendMessage(message.chat, {
-     image: { url: imageUrl },
-     caption: `[PROMPT]: \`\`\`${query}\`\`\`  \n ${Config.caption} `,
-    })
+    const response = await fetch(apiUrl)
+    const data = await response.json()
+
+    if (data.status === 200 && data.result.aiImageData.length > 0) {
+     const imageUrl = data.result.aiImageData[0].imageHighResolution.url
+     return await message.bot.sendMessage(message.chat, {
+      image: { url: imageUrl },
+      caption: `[PROMPT]: \`\`\`${query}\`\`\`  \n ${Config.caption} `,
+     })
+    } else {
+     throw new Error('No image data received from API')
+    }
    } catch (error) {
-    console.log('ERROR IN DALLE RESPONSE FROM API GURUGPT\n', error)
+    console.log('ERROR IN DALLE RESPONSE FROM API\n', error)
+    return await message.reply('*_Error occurred while fetching the image._*')
    }
-
-   if (!Config.OPENAI_API_KEY || !Config.OPENAI_API_KEY.startsWith('sk')) {
-    return message.reply('*_No API Key Found._*')
-   }
-
-   return await message.bot.sendMessage(message.chat, {
-    image: { url: await aiResponse(message, 'dalle', query) },
-    caption: '*DALL-E IMAGES*\n' + Config.caption,
-   })
   } catch (error) {
    await message.error(`${error}\n\ncommand: dalle`, error, '*_No response from Dall-E AI, Sorry!!_*')
   }
