@@ -1,7 +1,7 @@
 {
  "name": "xstro-bot",
  "version": "1.0.0",
- "description": "Revisied Xstro-Bot",
+ "description": "Advanced WhatsApp Bot",
  "main": "index.js",
  "type": "commonjs",
  "scripts": {
