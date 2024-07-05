@@ -6,7 +6,6 @@
  "type": "commonjs",
  "scripts": {
   "run": "pm2 start . --deep-monitoring --attach --name xstro || node .",
-  "asta": "pm2 start . --deep-monitoring --attach --name xstro || node .",
   "start": "pm2 start . --attach --name xstro",
   "stop": "pm2 stop xstro"
  },
