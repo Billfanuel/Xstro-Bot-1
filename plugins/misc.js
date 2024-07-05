@@ -1,6 +1,4 @@
-const { Index, prefix, createUrl } = require('../lib')
-const fs = require('fs-extra')
-const util = require('util')
+const { Index, prefix, createUrl, createMediaUrl } = require('../lib')
 Index(
  {
   pattern: 'readmore',
