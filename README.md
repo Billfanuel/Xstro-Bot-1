@@ -53,7 +53,7 @@ Deploying Xstro-Bot is straightforward and can be done on various platforms.
   <a href='#' target="_blank"><img alt='Get Session' src='https://img.shields.io/badge/Get_Session-100000?style=for-the-badge&logo=qrcode&logoColor=white&labelColor=blue&color=blue'/></a>
   <a href='#' target="_blank"><img alt='Deployment' src='https://img.shields.io/badge/Deployment-100000?style=for-the-badge&logo=rocket&logoColor=white&labelColor=blue&color=blue'/></a>
   <a href='#' target="_blank"><img alt='Support' src='https://img.shields.io/badge/Get Support-100000?style=for-the-badge&logo=lifebuoy&logoColor=white&labelColor=blue&color=blue'/></a>
-  <a href='#' target="_blank"><img alt='Contribute' src='https://img.shields.io/badge/Contribute-100000?style=for-the-badge&logo=github&logoColor=white&labelColor=blue&color=blue'/></a>
+  <a href='https://t.me/astrofx0011' target="_blank"><img alt='Contribute' src='https://img.shields.io/badge/Contribute-100000?style=for-the-badge&logo=github&logoColor=white&labelColor=blue&color=blue'/></a>
   <a href='https://github.com/AstroFx0011/Xstro-Bot/fork' target="_blank"><img alt='Share' src='https://img.shields.io/badge/Fork Repo-100000?style=for-the-badge&logo=share&logoColor=white&labelColor=blue&color=blue'/></a>
 </p>
 
